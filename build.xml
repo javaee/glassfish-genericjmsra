@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<!DOCTYPE project [
+<!ENTITY commonSetup SYSTEM "file:./config/properties.xml">
+]>
+
+<project name="genericra" default="usage" basedir=".">
+
+    &commonSetup;
+
+    <!-- ================================================================ 
+     Target to compile the java source files 
+     Variables used:
+          ${build.classes.dir}
+          ${ra.classpath}
+          ${src}
+         ================================================================ -->
+    <target name="compile" depends="init-common">
+       <mkdir dir="${build.classes.dir}"/>
+       <echo message="build.xml: Compiling test source files" level="verbose"/>
+       <javac srcdir="${src.dir}"
+          destdir="${build.classes.dir}"
+          classpath="${ra.classpath}"
+          debug="on"
+          failonerror="true"/>
+    </target>
+
+
+    <!-- ================================================================ 
+     Target to compile the java source files 
+     Variables used:
+          ${build.classes.dir}
+          ${ra.classpath}
+          ${src}
+          ${assemble.dir}
+         ================================================================ -->
+    <target name="build" depends="compile">
+        <copy todir="${build.classes.dir}">
+            <fileset dir="${src.dir}/java">
+                <include name="**/*.properties"/>
+            </fileset>
+        </copy>
+        <jar jarfile="${assemble.dir}/genericra.jar"
+            basedir="${build.classes.dir}" includes="**/*" />
+
+        <jar jarfile="${assemble.dir}/genericra.rar"
+                basedir="${assemble.dir}" includes="genericra.jar">
+                <metainf dir="${src.dir}/descriptors">
+                        <include name="ra.xml"/>
+                </metainf>
+        </jar>
+    </target>
+
+    <target name="clean" depends="init-common">
+        <delete includeEmptyDirs="true" failonerror="false">
+            <fileset dir="${build.base.dir}"/>
+        </delete>
+
+    </target>
+
+
+    <target name="usage">
+	<echo>
+		Usage:
+			ant compile (compile all the java files)
+			ant build (creates the resource adapter archive)
+	</echo>
+    </target>
+</project>
