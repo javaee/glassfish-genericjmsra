@@ -5,6 +5,53 @@
  content="text/html; charset=ISO-8859-1">
   <title>Generic Resource Adapter for JMS</title>
   <meta name="author" content="Binod.Pg@Sun.COM">
+  <meta http-equiv="CONTENT-TYPE" content="text/html; charset=utf-8">
+  <meta name="GENERATOR" content="StarOffice 7  (Solaris Sparc)">
+  <meta name="CREATED" content="20050121;19102200">
+  <meta name="CHANGED" content="20050425;11285400">
+  <style>
+	<!--
+		@page { size: 8.27in 11.69in; margin: 0.79in }
+		P { margin-bottom: 0.08in }
+		H4 { margin-bottom: 0.08in }
+		H4.western { font-family: "Luxi Sans", sans-serif; font-size: 11pt; font-style: italic }
+		H4.cjk { font-family: "Mincho"; font-size: 11pt; font-style: italic }
+		H4.ctl { font-family: "Luxi Sans"; font-size: 11pt; font-style: italic }
+	--></style>
+  <meta http-equiv="CONTENT-TYPE" content="text/html; charset=utf-8">
+  <meta name="GENERATOR" content="StarOffice 7  (Solaris Sparc)">
+  <meta name="CREATED" content="20050121;19102200">
+  <meta name="CHANGED" content="20050411;12564300">
+  <style>
+	<!--
+		@page { size: 8.27in 11.69in; margin: 0.79in }
+		P { margin-bottom: 0.08in }
+		H1 { margin-bottom: 0.08in }
+		H1.western { font-family: "Luxi Sans", sans-serif; font-size: 16pt }
+		H1.cjk { font-family: "Mincho"; font-size: 16pt }
+		H1.ctl { font-family: "Luxi Sans"; font-size: 16pt }
+	-->
+	</style>
+  <meta http-equiv="CONTENT-TYPE" content="text/html; charset=utf-8">
+  <meta name="GENERATOR" content="StarOffice 7  (Solaris Sparc)">
+  <meta name="CREATED" content="20050121;19102200">
+  <meta name="CHANGED" content="20050411;12564300">
+  <style>
+	<!--
+		@page { size: 8.27in 11.69in; margin: 0.79in }
+		P { margin-bottom: 0.08in }
+		H4 { margin-bottom: 0.08in }
+		H4.western { font-family: "Luxi Sans", sans-serif; font-size: 11pt; font-style: italic }
+		H4.cjk { font-family: "Mincho"; font-size: 11pt; font-style: italic }
+		H4.ctl { font-family: "Luxi Sans"; font-size: 11pt; font-style: italic }
+		TD P { margin-bottom: 0.08in }
+		TH P { margin-bottom: 0.08in; font-style: italic }
+		H1 { margin-bottom: 0.08in }
+		H1.western { font-family: "Luxi Sans", sans-serif; font-size: 16pt }
+		H1.cjk { font-family: "Mincho"; font-size: 16pt }
+		H1.ctl { font-family: "Luxi Sans"; font-size: 16pt }
+	-->
+	</style>
 </head>
 <body>
 <div style="text-align: center;">
@@ -18,7 +65,7 @@ Guide to Generic Resource Adapter for JMS</big></big><br>
 updated :&nbsp; </span>25th April 2005<br style="font-style: italic;">
 <span style="font-style: italic;">Author : </span>Binod P.G<span
  style="font-style: italic;"><br>
-version : </span>1.0<br>
+version : </span>0.9<br>
 </div>
 <div style="text-align: left;"><span style="font-style: italic;">Abstract
 :</span><span style="font-weight: bold;"> This document describes how
@@ -96,21 +143,7 @@ Sivakumar Thyagarajan</span><br style="font-style: italic;">
 Dianne Jiao<br>
 </span><br>
 <h3><a name="mozTocId87001" class="mozTocH3"></a>Technical Architecture</h3>
-<meta http-equiv="CONTENT-TYPE" content="text/html; charset=utf-8">
-<title></title>
-<meta name="GENERATOR" content="StarOffice 7  (Solaris Sparc)">
-<meta name="CREATED" content="20050121;19102200">
-<meta name="CHANGED" content="20050425;11285400">
-<style>
-	<!--
-		@page { size: 8.27in 11.69in; margin: 0.79in }
-		P { margin-bottom: 0.08in }
-		H4 { margin-bottom: 0.08in }
-		H4.western { font-family: "Luxi Sans", sans-serif; font-size: 11pt; font-style: italic }
-		H4.cjk { font-family: "Mincho"; font-size: 11pt; font-style: italic }
-		H4.ctl { font-family: "Luxi Sans"; font-size: 11pt; font-style: italic }
-	--></style><img
- src="jmsra-arch.jpg" title="Architecture Diagram" alt=""
+<img src="jmsra-arch.jpg" title="Architecture Diagram" alt=""
  style="width: 604px; height: 433px;"><br>
 <br>
 <p align="justify"><span style=""><span style="text-decoration: none;"><font
@@ -166,21 +199,6 @@ provider, resource adapter will create (or lookup) a
 implementation of the JMS provider and create a ConnectionConsumer.<br>
 </p>
 <p align="justify">
-<meta http-equiv="CONTENT-TYPE" content="text/html; charset=utf-8">
-<title></title>
-<meta name="GENERATOR" content="StarOffice 7  (Solaris Sparc)">
-<meta name="CREATED" content="20050121;19102200">
-<meta name="CHANGED" content="20050411;12564300">
-<style>
-	<!--
-		@page { size: 8.27in 11.69in; margin: 0.79in }
-		P { margin-bottom: 0.08in }
-		H1 { margin-bottom: 0.08in }
-		H1.western { font-family: "Luxi Sans", sans-serif; font-size: 16pt }
-		H1.cjk { font-family: "Mincho"; font-size: 16pt }
-		H1.ctl { font-family: "Luxi Sans"; font-size: 16pt }
-	-->
-	</style>
 </p>
 <h3><a name="mozTocId629794" class="mozTocH3"></a>How to configure the
 Generic Resource Adapter for
@@ -198,27 +216,6 @@ tree and will be looked up for use by the Generic Resource Adapter
 resources. If that mode is not suitable for integration, it is also
 possible to use java reflection of JMS administered object javabean
 classes as the mode of integration. <br>
-<meta http-equiv="CONTENT-TYPE" content="text/html; charset=utf-8">
-<title></title>
-<meta name="GENERATOR" content="StarOffice 7  (Solaris Sparc)">
-<meta name="CREATED" content="20050121;19102200">
-<meta name="CHANGED" content="20050411;12564300">
-<style>
-	<!--
-		@page { size: 8.27in 11.69in; margin: 0.79in }
-		P { margin-bottom: 0.08in }
-		H4 { margin-bottom: 0.08in }
-		H4.western { font-family: "Luxi Sans", sans-serif; font-size: 11pt; font-style: italic }
-		H4.cjk { font-family: "Mincho"; font-size: 11pt; font-style: italic }
-		H4.ctl { font-family: "Luxi Sans"; font-size: 11pt; font-style: italic }
-		TD P { margin-bottom: 0.08in }
-		TH P { margin-bottom: 0.08in; font-style: italic }
-		H1 { margin-bottom: 0.08in }
-		H1.western { font-family: "Luxi Sans", sans-serif; font-size: 16pt }
-		H1.cjk { font-family: "Mincho"; font-size: 16pt }
-		H1.ctl { font-family: "Luxi Sans"; font-size: 16pt }
-	-->
-	</style>
 </p>
 <p align="justify">Users can use either the Sun Java System Application
 server's admin GUI or CLI to configure the resource adapter. This is
