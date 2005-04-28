@@ -373,6 +373,8 @@ public class SessionAdapter implements Session, TopicSession, QueueSession {
     }
     
     private javax.jms.Destination getWrappedDestination(Destination dest) throws JMSException {
+        if ((dest instanceof TemporaryQueue) 
+           || (dest instanceof TemporaryTopic)) return dest;
         return (javax.jms.Destination)(((com.sun.genericra.outbound.DestinationAdapter)dest)._getPhysicalDestination());        
     }
 

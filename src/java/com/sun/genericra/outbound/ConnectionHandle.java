@@ -64,7 +64,9 @@ public class ConnectionHandle implements javax.jms.Connection, TopicConnection,
     }
 
     public void close() throws JMSException {
-        checkIfClosed();
+        if (isClosed()) {
+            return;
+        }
         this.physicalJMSCon.stop();
         synchronized (sessions) {
             Object[] sessionObjects = this.sessions.toArray();

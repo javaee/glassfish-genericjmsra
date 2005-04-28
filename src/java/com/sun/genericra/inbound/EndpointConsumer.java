@@ -270,7 +270,7 @@ public class EndpointConsumer  {
 
 
         ObjectBuilder dmdBuilder = null;
-        if (this.transacted && spec.getSendBadMessagesToDMD()) {
+        if (spec.getSendBadMessagesToDMD()) {
             if (spec.getProviderIntegrationMode().equalsIgnoreCase(Constants.JNDI_BASED)) {
                 dmdBuilder = obf.createUsingJndiName(
                              this.spec.getDeadMessageDestinationJndiName(),
