@@ -81,6 +81,7 @@ public class ObjectBuilderFactory {
         public Object createObject() throws ResourceException {
             try {
                 Hashtable props = parseToProperties(this.jndiProps);
+                debug("Properties passed to InitialContext :: " +  props);
                 InitialContext ic = new InitialContext(props);
                 debug("Looking the JNDI name :" + this.jndiName);
                 return ic.lookup(this.jndiName);
