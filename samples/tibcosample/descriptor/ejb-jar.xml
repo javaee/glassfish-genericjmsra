@@ -1,0 +1,156 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!--
+ * Copyright 2004-2005 Sun Microsystems, Inc.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ *  implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+-->
+
+<ejb-jar
+        version="2.1"
+        xmlns="http://java.sun.com/xml/ns/j2ee"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/ejb-jar_2_1.xsd"
+        >
+    <display-name>EBJAR</display-name>
+    <enterprise-beans>
+        <session>
+            <display-name>PublisherBean</display-name>
+            <ejb-name>PublisherBean</ejb-name>
+            <home>hello.PublisherHome</home>
+            <remote>hello.PublisherRemote</remote>
+            <ejb-class>hello.PublisherBean</ejb-class>
+            <session-type>Stateless</session-type>
+            <transaction-type>Container</transaction-type>
+            <resource-ref>
+                <res-ref-name>jms/MyConnectionFactory</res-ref-name>
+                <res-type>javax.jms.ConnectionFactory</res-type>
+                <res-auth>Container</res-auth>
+                <res-sharing-scope>Shareable</res-sharing-scope>
+            </resource-ref>
+            <resource-env-ref>
+                <resource-env-ref-name>jms/QueueName</resource-env-ref-name>
+                <resource-env-ref-type>javax.jms.Queue</resource-env-ref-type>
+            </resource-env-ref>
+             <security-identity>
+        <description></description>
+        <use-caller-identity></use-caller-identity>
+      </security-identity>
+        </session>
+        <message-driven>
+            <display-name>MessageBean</display-name>
+            <ejb-name>MessageBean</ejb-name>
+            <ejb-class>MessageBean</ejb-class>
+            <messaging-type>javax.jms.MessageListener</messaging-type>
+            <transaction-type>Bean</transaction-type>
+            <message-destination-type>javax.jms.Queue</message-destination-type>
+            <message-destination-link>PhysicalQueue</message-destination-link>
+            <resource-ref>
+                <res-ref-name>jdbc/PublisherDB</res-ref-name>
+                <res-type>javax.sql.DataSource</res-type>
+                <res-auth>Container</res-auth>
+                <res-sharing-scope>Shareable</res-sharing-scope>
+            </resource-ref>
+        </message-driven>
+    </enterprise-beans>
+    <assembly-descriptor>
+        <method-permission>
+            <unchecked></unchecked>
+            <method>
+                <ejb-name>PublisherBean</ejb-name>
+                <method-intf>Home</method-intf>
+                <method-name>remove</method-name>
+                <method-params>
+                    <method-param>java.lang.Object</method-param>
+                </method-params>
+            </method>
+            <method>
+                <ejb-name>PublisherBean</ejb-name>
+                <method-intf>Home</method-intf>
+                <method-name>getHomeHandle</method-name>
+            </method>
+            <method>
+                <ejb-name>PublisherBean</ejb-name>
+                <method-intf>Remote</method-intf>
+                <method-name>publishNews</method-name>
+            </method>
+            <method>
+                <ejb-name>PublisherBean</ejb-name>
+                <method-intf>Remote</method-intf>
+                <method-name>isIdentical</method-name>
+                <method-params>
+                    <method-param>javax.ejb.EJBObject</method-param>
+                </method-params>
+            </method>
+            <method>
+                <ejb-name>PublisherBean</ejb-name>
+                <method-intf>Home</method-intf>
+                <method-name>create</method-name>
+            </method>
+            <method>
+                <ejb-name>PublisherBean</ejb-name>
+                <method-intf>Home</method-intf>
+                <method-name>remove</method-name>
+                <method-params>
+                    <method-param>javax.ejb.Handle</method-param>
+                </method-params>
+            </method>
+            <method>
+                <ejb-name>PublisherBean</ejb-name>
+                <method-intf>Remote</method-intf>
+                <method-name>getHandle</method-name>
+            </method>
+            <method>
+                <ejb-name>PublisherBean</ejb-name>
+                <method-intf>Home</method-intf>
+                <method-name>getEJBMetaData</method-name>
+            </method>
+            <method>
+                <ejb-name>PublisherBean</ejb-name>
+                <method-intf>Remote</method-intf>
+                <method-name>getPrimaryKey</method-name>
+            </method>
+            <method>
+                <ejb-name>PublisherBean</ejb-name>
+                <method-intf>Remote</method-intf>
+                <method-name>remove</method-name>
+            </method>
+            <method>
+                <ejb-name>PublisherBean</ejb-name>
+                <method-intf>Remote</method-intf>
+                <method-name>getEJBHome</method-name>
+            </method>
+        </method-permission>
+        <container-transaction>
+            <method>
+                <ejb-name>PublisherBean</ejb-name>
+                <method-intf>Remote</method-intf>
+                <method-name>publishNews</method-name>
+            </method>
+            <trans-attribute>Required</trans-attribute>
+        </container-transaction>
+        <container-transaction>
+            <method>
+                <ejb-name>MessageBean</ejb-name>
+                <method-name>onMessage</method-name>
+                <method-params>
+                    <method-param>javax.jms.Message</method-param>
+                </method-params>
+            </method>
+            <trans-attribute>Required</trans-attribute>
+        </container-transaction>
+        <message-destination>
+            <message-destination-name>PhysicalQueue</message-destination-name>
+        </message-destination>
+    </assembly-descriptor>
+</ejb-jar>
