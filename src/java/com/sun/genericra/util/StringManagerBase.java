@@ -51,7 +51,7 @@ public class StringManagerBase {
         try {            
             _resourceBundle = ResourceBundle.getBundle(resourceBundleName);
         } catch (Exception e) {
-            _logger.log(Level.SEVERE, "iplanet_util.no_resource_bundle", e);
+            _logger.log(Level.SEVERE, "string_util.no_resource_bundle", e);
         }
     }
 
@@ -69,7 +69,7 @@ public class StringManagerBase {
             try {
                 managers.put(resourceBundleName, mgr);
             } catch (Exception e) {
-                _logger.log(Level.SEVERE,"iplanet_util.error_while_caching",e);
+                _logger.log(Level.SEVERE,"string_util.error_while_caching",e);
             }
         }
         return mgr;
@@ -147,7 +147,7 @@ public class StringManagerBase {
         try {
             fmtStr =  f.format(arguments);
         } catch (Exception e) {
-            _logger.log(Level.WARNING, "iplanet_util.error_while_formating", e);
+            _logger.log(Level.WARNING, "string_util.error_while_formating", e);
 
             // returns default format
             fmtStr = defaultFormat;
