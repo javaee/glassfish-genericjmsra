@@ -32,7 +32,7 @@
           ${build.classes.dir}
           ${ra.classpath}
           ${src}
-          ${assemble.dir}
+          ${dist.dir}
          ================================================================ -->
     <target name="build" depends="compile">
         <copy todir="${build.classes.dir}">
@@ -40,11 +40,11 @@
                 <include name="**/*.properties"/>
             </fileset>
         </copy>
-        <jar jarfile="${assemble.dir}/genericra.jar"
+        <jar jarfile="${dist.dir}/genericra.jar"
             basedir="${build.classes.dir}" includes="**/*" />
 
-        <jar jarfile="${assemble.dir}/genericra.rar"
-                basedir="${assemble.dir}" includes="genericra.jar">
+        <jar jarfile="${dist.dir}/genericra.rar"
+                basedir="${dist.dir}" includes="genericra.jar">
                 <metainf dir="${src.dir}/descriptors">
                         <include name="ra.xml"/>
                 </metainf>

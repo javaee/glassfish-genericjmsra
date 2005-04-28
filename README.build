@@ -18,4 +18,4 @@ Steps to do a build
    j2ee.jar
 3. change the directory to RA_HOME
 4. execute "ant clean build"
-5. genericra.rar and genericra.jar will be created under RA_HOME/build/lib
+5. genericra.rar and genericra.jar will be created under RA_HOME/build/dist
