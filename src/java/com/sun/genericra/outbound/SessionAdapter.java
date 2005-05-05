@@ -22,6 +22,7 @@ import java.util.Iterator;
 import javax.jms.BytesMessage;
 import javax.jms.Destination;
 import javax.jms.JMSException;
+import javax.jms.IllegalStateException;
 import javax.jms.MapMessage;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
@@ -94,8 +95,8 @@ public class SessionAdapter implements Session, TopicSession, QueueSession {
     }
 
     private void checkIfClosed() throws JMSException {
-        if (this.isClosed) throw new JMSException("JMS Session closed");
-        if (!this.isValid) throw new JMSException("JMS Session invalid");
+        if (this.isClosed) throw new IllegalStateException("JMS Session closed");
+        if (!this.isValid) throw new IllegalStateException("JMS Session invalid");
     }
     
 
@@ -212,12 +213,16 @@ public class SessionAdapter implements Session, TopicSession, QueueSession {
 
     public TemporaryQueue createTemporaryQueue() throws JMSException {
         checkIfClosed();
-        return this.physicalSession.createTemporaryQueue();
+        TemporaryQueue q =  this.physicalSession.createTemporaryQueue();
+        ch._addTemporaryDest(q);
+        return q;
     }
 
     public TemporaryTopic createTemporaryTopic() throws JMSException {
         checkIfClosed();
-        return this.physicalSession.createTemporaryTopic();
+        TemporaryTopic t = this.physicalSession.createTemporaryTopic();
+        ch._addTemporaryDest(t);
+        return t;
     }
 
     public TextMessage createTextMessage() throws JMSException {
@@ -290,6 +295,7 @@ public class SessionAdapter implements Session, TopicSession, QueueSession {
     public QueueBrowser createBrowser(Queue queue, String msgSel)
                     throws JMSException {
         checkIfClosed();
+        debug("PhysicalSession class is " + this.physicalSession.getClass().getName());
         QueueBrowser qb = this.physicalSession.createBrowser(getWrappedQueue(queue), msgSel);
         this.queueBrowsers.add(qb);
         return qb;
@@ -363,19 +369,27 @@ public class SessionAdapter implements Session, TopicSession, QueueSession {
     }
 
     private javax.jms.Topic getWrappedTopic(Topic topic) throws JMSException {
-        if (topic instanceof TemporaryTopic) return topic;
-        return (javax.jms.Topic)(((TopicProxy)topic)._getPhysicalDestination());        
+        if (topic instanceof TopicProxy) {
+            return (javax.jms.Topic)(((TopicProxy)topic)._getPhysicalDestination());        
+        } else {
+            return topic;
+        }
     }
 
     private javax.jms.Queue getWrappedQueue(Queue queue) throws JMSException {
-        if (queue instanceof TemporaryQueue) return queue;
-        return (javax.jms.Queue)(((QueueProxy)queue)._getPhysicalDestination());        
+        if (queue instanceof QueueProxy) {
+            return (javax.jms.Queue)(((QueueProxy)queue)._getPhysicalDestination());        
+        } else {
+            return queue;
+        }
     }
     
     private javax.jms.Destination getWrappedDestination(Destination dest) throws JMSException {
-        if ((dest instanceof TemporaryQueue) 
-           || (dest instanceof TemporaryTopic)) return dest;
-        return (javax.jms.Destination)(((com.sun.genericra.outbound.DestinationAdapter)dest)._getPhysicalDestination());        
+        if (dest instanceof DestinationAdapter)  {
+            return (javax.jms.Destination)(((DestinationAdapter)dest)._getPhysicalDestination());        
+        } else {
+            return dest;
+        }
     }
 
     void _swapPhysicalSession (Session in) {

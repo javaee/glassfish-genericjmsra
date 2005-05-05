@@ -129,11 +129,6 @@ public abstract class AbstractManagedConnectionFactory extends GenericJMSRAPrope
             physicalCon = createConnection(pc,this.connectionFactory);
         }
 
-        //Set client ID
-        if (this.clientId != null){
-            physicalCon.setClientID(this.clientId); //XXX. Set clientId on first use. 
-        }
-        
         return physicalCon;
     }
 
@@ -192,6 +187,7 @@ public abstract class AbstractManagedConnectionFactory extends GenericJMSRAPrope
         while(iter.hasNext()) {
             try {
                 mc = (com.sun.genericra.outbound.ManagedConnection) iter.next();
+                debug("Matching managed connections ->" + mc);
             } catch(java.util.NoSuchElementException nsee) {
                 throw ExceptionUtils.newResourceException(nsee);
             }

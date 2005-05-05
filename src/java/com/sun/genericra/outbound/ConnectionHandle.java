@@ -22,8 +22,11 @@ import java.util.List;
 import javax.jms.ConnectionConsumer;
 import javax.jms.ConnectionMetaData;
 import javax.jms.Destination;
+import javax.jms.TemporaryQueue;
+import javax.jms.TemporaryTopic;
 import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
+import javax.jms.IllegalStateException;
 import javax.jms.Queue;
 import javax.jms.QueueConnection;
 import javax.jms.QueueSession;
@@ -47,6 +50,7 @@ public class ConnectionHandle implements javax.jms.Connection, TopicConnection,
     private javax.jms.Connection physicalJMSCon;
     private boolean isClosed = false;
     private ArrayList sessions = new ArrayList();
+    private ArrayList tempDestinations = new ArrayList();
     private boolean valid = true;
 
     /**
@@ -75,6 +79,19 @@ public class ConnectionHandle implements javax.jms.Connection, TopicConnection,
                 sa.close();
             }
         }
+
+        synchronized (tempDestinations) {
+            Object[] dests = this.tempDestinations.toArray();
+            for (int i=0; i < dests.length; i++) {
+                if (dests[i] instanceof TemporaryQueue ) {
+                    ((TemporaryQueue) dests[i]).delete();
+                }
+                if (dests[i] instanceof TemporaryTopic ) {
+                    ((TemporaryTopic) dests[i]).delete();
+                }
+            }
+        }
+        
         this.isClosed = true;
 
         this.mc.sendConnectionClosedEvent(this);
@@ -229,9 +246,9 @@ public class ConnectionHandle implements javax.jms.Connection, TopicConnection,
 
     private void checkIfClosed() throws JMSException {
         if (isClosed)
-            throw new JMSException("Connection is closed");
+            throw new IllegalStateException("Connection is closed");
         if (!valid)
-            throw new JMSException("Invalid connection");
+            throw new IllegalStateException("Invalid connection");
     }
 
     public boolean isClosed() {
@@ -248,5 +265,9 @@ public class ConnectionHandle implements javax.jms.Connection, TopicConnection,
 
     public void setInvalid() {
         this.valid = false;
+    }
+
+    void _addTemporaryDest ( Destination dest) {
+        tempDestinations.add(dest);
     }
  }

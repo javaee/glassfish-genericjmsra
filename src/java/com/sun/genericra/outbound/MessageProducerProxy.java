@@ -129,7 +129,9 @@ public class MessageProducerProxy implements QueueSender, TopicPublisher {
     }
 
     public void publish(javax.jms.Topic topic,Message msg) throws JMSException {
-        getPublisher().publish(topic, msg);
+        Message tmpMsg = unwrapDestinations(msg);
+        javax.jms.Topic tmpTopic = unwrapDestinations(topic);
+        getPublisher().publish(tmpTopic, tmpMsg);
     }
 
     public void publish(javax.jms.Topic topic,Message msg,int i,int j,long l)

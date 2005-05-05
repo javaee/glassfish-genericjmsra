@@ -306,6 +306,7 @@ public class ManagedConnection implements javax.resource.spi.ManagedConnection {
 
     public Object getConnection(Subject subject, ConnectionRequestInfo cri)
                     throws ResourceException {
+        debug("On getConnection");
         /*
          * Return a proxy of the JMS actual-connection which
          * intercepts all <code> Connection </code> calls and implements
@@ -330,6 +331,14 @@ public class ManagedConnection implements javax.resource.spi.ManagedConnection {
         com.sun.genericra.outbound.ConnectionHandle connectionHandle = new com.sun.genericra.outbound.ConnectionHandle(
                         this);
         addConnectionHandle(connectionHandle);
+        try {
+            if ( this.mcf.getClientId() != null &&
+                this.physicalJMSCon.getClientID() == null) {
+                this.physicalJMSCon.setClientID(this.mcf.getClientId());
+            }
+        } catch (JMSException e) {
+           throw ExceptionUtils.newResourceException(e);
+        }
         return connectionHandle;
     }
 
@@ -337,10 +346,13 @@ public class ManagedConnection implements javax.resource.spi.ManagedConnection {
         debug("MC: txCompleted  called");
         this.transactionInProgress = false;
         debug("MC: txCompleted  called - supports XA" + this.mcf.getSupportsXA());
-        sendConnectionErrorEvent(activeHandle);
+        if (activeHandle != null && activeHandle.isClosed()) {
+            sendConnectionErrorEvent(activeHandle);
+        }
     }
 
     private void transactionStarted() throws ResourceException {
+        debug("Transaction Started");
         //Mark MC as txn in progress
         this.transactionInProgress = true;
     }
@@ -494,7 +506,9 @@ public class ManagedConnection implements javax.resource.spi.ManagedConnection {
     }
 
     public String toString() {
-        return "Physical Session is : " + physicalJMSSession;
+        return "Physical Session -> " + physicalJMSSession + 
+               "Physical Connection " + physicalJMSCon + 
+               "Super -> " + super.toString() ;
     }
 
     XAResource _getXAResource() throws JMSException {

@@ -147,4 +147,12 @@ public abstract class DestinationAdapter extends GenericJMSRAProperties
     private static void debug(String string) {
         logger.log(Level.FINEST, "[Destination]" + string);
     }
+
+    public String toString() {
+        if ( this.physicalDestination != null ) {
+            return this.physicalDestination.toString();
+        } else {
+            return super.toString();
+        }
+    }
 }
