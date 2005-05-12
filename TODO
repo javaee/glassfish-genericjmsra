@@ -1,0 +1,4 @@
+1. Integrate Other JMS providers: Sonic, Fiorono etc with Generic RA for JMS.
+2. Test Reconnect capability properly.
+3. Integrate a cluster of external JMS provider with Generic RA for JMS.
+
