@@ -24,6 +24,7 @@ import javax.transaction.xa.XAResource;
 import java.util.logging.*;
 
 import com.sun.genericra.util.*;
+import com.sun.genericra.AbstractXAResourceType;
 
 /**
  * Helper class that delivers a message to MDB.
@@ -53,11 +54,16 @@ public class DeliveryHelper {
         this.spec = pool.getConsumer().getSpec();
         this.jmsResource = jmsResource;
         this.transacted = pool.isTransacted();
+        AbstractXAResourceType xarObject = null;
         if (redeliveryRequired()) {
-            this.xar = new InboundXAResourceProxy(jmsResource.getXAResource());
+            xarObject = new InboundXAResourceProxy(jmsResource.getXAResource());
         } else {
-            this.xar = jmsResource.getXAResource();
+            xarObject = new SimpleXAResourceProxy(jmsResource.getXAResource());
+            //this.xar = jmsResource.getXAResource();
         }
+        xarObject.setRMPolicy(this.spec.getRMPolicy());
+        xarObject.setConnection(pool.getConnection());
+        this.xar = xarObject;
     }
 
     public boolean redeliveryRequired() {

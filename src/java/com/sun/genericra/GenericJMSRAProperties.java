@@ -41,10 +41,18 @@ public class GenericJMSRAProperties implements ResourceAdapterAssociation, Seria
         logger = LogUtils.getLogger();
     }
 
+    public static final String PROVIDER_MANAGED 
+                             ="ProviderManaged";
+
+    public static final String ONE_PER_PHYSICALCONNECTION 
+                             ="OnePerPhysicalConnection";
+
     private String providerIntegrationMode = null; 
     
     private String jndiProperties; 
     private Boolean supportsXA = null; 
+
+    private String rmPolicy  = null; 
 
     //MoM specific constants.
     private String queueCFClassName;
@@ -153,6 +161,22 @@ public class GenericJMSRAProperties implements ResourceAdapterAssociation, Seria
             return this.providerIntegrationMode;
         } else if (raprops != null) {
             return raprops.providerIntegrationMode;
+        } else {
+            return null;
+        }
+    }
+
+    public void setRMPolicy(String policy) {
+        logger.log(Level.FINEST, "setRMPolicy :" + policy);
+        this.rmPolicy = policy;
+    }
+    
+    public String getRMPolicy() {
+        logger.log(Level.FINEST, "RMPolicy :" + this.rmPolicy );
+        if (this.rmPolicy != null) {
+            return this.rmPolicy;
+        } else if (raprops != null) {
+            return raprops.rmPolicy;
         } else {
             return null;
         }

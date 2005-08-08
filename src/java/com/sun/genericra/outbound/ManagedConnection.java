@@ -51,6 +51,7 @@ public class ManagedConnection implements javax.resource.spi.ManagedConnection {
     private PrintWriter logWriter;
     private javax.jms.Connection physicalJMSCon;
     private Session physicalJMSSession;
+    private XASession physicalXASession;
     private ConnectionHandle activeHandle;
     private ArrayList connectionHandles = new ArrayList();
     private boolean isDestroyed = false;
@@ -121,17 +122,20 @@ public class ManagedConnection implements javax.resource.spi.ManagedConnection {
             case Constants.UNIFIED_SESSION :
                 XASession xas = ((XAConnection)this.physicalJMSCon).createXASession();
                 this.xaresource = xas.getXAResource();
-                result = xas;
+                this.physicalXASession = xas;
+                result = xas.getSession();
                 break;
             case Constants.TOPIC_SESSION :
                 XATopicSession xast = ((XATopicConnection)this.physicalJMSCon).createXATopicSession();
                 this.xaresource = xast.getXAResource();
-                result = xast;
+                this.physicalXASession = xast;
+                result = xast.getTopicSession();
                 break;
             case Constants.QUEUE_SESSION :
                 XAQueueSession xasq = ((XAQueueConnection)this.physicalJMSCon).createXAQueueSession();
                 this.xaresource = xasq.getXAResource();
-                result = xasq;
+                this.physicalXASession = xasq;
+                result = xasq.getQueueSession();
                 break;
         }
         return result;
@@ -198,6 +202,9 @@ public class ManagedConnection implements javax.resource.spi.ManagedConnection {
         try {
             if (this.physicalJMSSession != null) {
                 this.physicalJMSSession.close();
+            }
+            if (this.physicalXASession != null) {
+                this.physicalXASession.close();
             }
             physicalJMSCon.close();
             physicalJMSCon = null;
@@ -301,7 +308,10 @@ public class ManagedConnection implements javax.resource.spi.ManagedConnection {
             throw new ResourceException(msg);
         }
 
-        return new XAResourceProxy(this);
+        XAResourceProxy proxy = new XAResourceProxy(this);
+        proxy.setConnection(this.physicalJMSCon);
+        proxy.setRMPolicy(((AbstractManagedConnectionFactory)mcf).getRMPolicy());
+        return proxy;
     }
 
     public Object getConnection(Subject subject, ConnectionRequestInfo cri)
@@ -485,7 +495,7 @@ public class ManagedConnection implements javax.resource.spi.ManagedConnection {
         }
 
         if (activeSA != null) {
-            activeSA._swapPhysicalSession(this.physicalJMSSession);       
+            activeSA._swapPhysicalSession(this.physicalJMSSession); 
         }
     }
 

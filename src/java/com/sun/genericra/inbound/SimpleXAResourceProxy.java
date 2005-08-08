@@ -14,9 +14,8 @@
  *  limitations under the License.
  *
  */
-package com.sun.genericra.outbound;
+package com.sun.genericra.inbound;
 
-import javax.jms.Connection;
 import javax.resource.ResourceException;
 import javax.transaction.xa.Xid;
 import javax.transaction.xa.XAException;
@@ -28,6 +27,7 @@ import com.sun.genericra.XAResourceType;
 import com.sun.genericra.AbstractXAResourceType;
 
 
+
 /**
  * <code>XAResource</code> wrapper for Generic JMS Connector. This class
  * intercepts all calls to the actual XAResource object of the physical
@@ -36,8 +36,8 @@ import com.sun.genericra.AbstractXAResourceType;
  * 
  *  @todo: This should be a dynamic proxy as well!!
  */
-public class XAResourceProxy extends AbstractXAResourceType {
-    private ManagedConnection mc;
+public class SimpleXAResourceProxy extends AbstractXAResourceType {
+    private XAResource xar;
 
     private static Logger logger;
     static {
@@ -52,8 +52,8 @@ public class XAResourceProxy extends AbstractXAResourceType {
      * @param mc
      *            <code>ManagedConnection</code>
      */
-    public XAResourceProxy(ManagedConnection mc) {
-        this.mc = mc;
+    public SimpleXAResourceProxy(XAResource xar) {
+        this.xar = xar;
     }
 
     /**
@@ -67,15 +67,7 @@ public class XAResourceProxy extends AbstractXAResourceType {
      */
     public void commit(Xid xid, boolean onePhase) throws XAException {
         debug(xid+"COmmitting tx...");
-        try {
-            _getXAResource().commit(xid, onePhase);
-        } finally {
-            try {
-                mc._endXaTx();
-            } catch (Exception e) {
-                throw ExceptionUtils.newXAException( e );
-            }
-        }
+        _getXAResource().commit(xid, onePhase);
     }
 
     /**
@@ -90,7 +82,6 @@ public class XAResourceProxy extends AbstractXAResourceType {
     public void end(Xid xid, int flags) throws XAException {
         debug(xid+"Ending tx..."+convertFlag(flags));
         _getXAResource().end(xid, flags);
-        //mc.transactionCompleted();
     }
 
     /**
@@ -125,17 +116,17 @@ public class XAResourceProxy extends AbstractXAResourceType {
      * @return true if it's the same RM instance; otherwise false.
      */
     public boolean isSameRM(XAResource xares) throws XAException {
-       XAResource inxa = xares;
+        XAResource inxa = xares;
         if (xares instanceof XAResourceType) {
             XAResourceType wrapper = (XAResourceType) xares;
             inxa = (XAResource) wrapper.getWrappedObject();
             if (!compare(wrapper) ) {
-        debug("isSameRM returns(compare) : " + false);
+               debug("isSameRM retursn /compare :" + false);
                 return false;
             }
         }
         boolean result =  _getXAResource().isSameRM(inxa);
-        debug("isSameRM returns : " + result);
+               debug("isSameRM retursn /compare :" + result);
         return result;
     }
 
@@ -181,15 +172,7 @@ public class XAResourceProxy extends AbstractXAResourceType {
      */
     public void rollback(Xid xid) throws XAException {
         debug(xid+"Rolling back tx...");
-        try {
-            _getXAResource().rollback(xid);
-        } finally {
-            try {
-                mc._endXaTx();
-            } catch (Exception e) {
-                throw ExceptionUtils.newXAException( e );
-            }
-        }
+        _getXAResource().rollback(xid);
     }
 
     /**
@@ -214,31 +197,16 @@ public class XAResourceProxy extends AbstractXAResourceType {
      * @return flags One of TMNOFLAGS, TMJOIN, or TMRESUME
      */
     public void start(Xid xid, int flags) throws XAException {
-        try {
-            mc._startXaTx();
-        } catch (Exception e) {
-            XAException xae = new XAException();
-            xae.initCause(e);
-            throw xae;
-        }
         debug(xid+"Starting tx..."+convertFlag(flags));
         _getXAResource().start(xid, flags);
     }
 
     private XAResource _getXAResource() throws XAException {
-        try { 
-            return  this.mc._getXAResource();
-        } catch (Exception e) {
-            throw ExceptionUtils.newXAException(e);
-        }
+        return xar;
     }
 
     public Object getWrappedObject() {
-        try { 
-            return  this.mc._getXAResource();
-        } catch (Exception e) {
-            throw ExceptionUtils.newRuntimeException(e);
-        }
+        return this.xar;
     }
 
     String convertFlag(int i) {
@@ -261,6 +229,6 @@ public class XAResourceProxy extends AbstractXAResourceType {
     }
     
     void debug(String s) {
-        logger.log(Level.FINEST, "Managed Connection = " + mc + " XAResourceProxy"+s);
+        logger.log(Level.FINEST, "Simple XAResourceProxy"+s);
     }
 }

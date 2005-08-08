@@ -19,6 +19,9 @@ package com.sun.genericra.inbound;
 import javax.transaction.xa.Xid;
 import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
+import com.sun.genericra.XAResourceType;
+import com.sun.genericra.AbstractXAResourceType;
+
 
 
 /**
@@ -31,7 +34,7 @@ import javax.transaction.xa.XAResource;
  *
  *  @author Binod P.G
  */
-public class InboundXAResourceProxy implements XAResource {
+public class InboundXAResourceProxy extends AbstractXAResourceType {
 
   
     private XAResource xar = null;    
@@ -109,7 +112,15 @@ public class InboundXAResourceProxy implements XAResource {
      * @return true if it's the same RM instance; otherwise false.
      */
     public boolean isSameRM(XAResource xares) throws XAException {
-        return xar.isSameRM(xares);
+        XAResource inxa = xares;
+        if (xares instanceof XAResourceType) {
+            XAResourceType wrapper = (XAResourceType) xares;
+            inxa = (XAResource) wrapper.getWrappedObject();
+            if (!compare(wrapper) ) {
+                return false;
+            }
+        }
+        return xar.isSameRM(inxa);
     }
 
     /**
@@ -204,6 +215,10 @@ public class InboundXAResourceProxy implements XAResource {
 
         } 
         xar.start(savedXid(), actualflag);
+    }
+
+    public Object getWrappedObject() {
+        return this.xar;
     }
 
     void setToRollback(boolean flag) {
