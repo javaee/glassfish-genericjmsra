@@ -41,14 +41,22 @@ public class ManagedQueueConnectionFactory extends AbstractManagedConnectionFact
 
     protected XAConnection createXAConnection(PasswordCredential pc, 
                     javax.jms.ConnectionFactory cf ) throws JMSException {
-        return ((XAQueueConnectionFactory)cf).createXAQueueConnection(
+        if (pc != null) {
+            return ((XAQueueConnectionFactory)cf).createXAQueueConnection(
                            pc.getUserName(), new String(pc.getPassword()));
+        } else {
+            return ((XAQueueConnectionFactory)cf).createXAQueueConnection();
+        }
 
     }
 
     protected Connection createConnection(PasswordCredential pc, 
                     javax.jms.ConnectionFactory cf ) throws JMSException {
-        return ((QueueConnectionFactory)cf).createQueueConnection(
+        if (pc != null) {
+            return ((QueueConnectionFactory)cf).createQueueConnection(
                            pc.getUserName(), new String(pc.getPassword()));
+        } else {
+            return ((QueueConnectionFactory)cf).createQueueConnection();
+        }
     }
 }

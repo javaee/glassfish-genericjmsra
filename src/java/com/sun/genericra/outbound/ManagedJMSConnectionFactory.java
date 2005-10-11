@@ -38,15 +38,23 @@ public class ManagedJMSConnectionFactory extends AbstractManagedConnectionFactor
 
     protected javax.jms.XAConnection createXAConnection(PasswordCredential pc, 
                            javax.jms.ConnectionFactory cf ) throws JMSException {
-        return ((XAConnectionFactory)cf).createXAConnection(
+        if (pc != null) {
+            return ((XAConnectionFactory)cf).createXAConnection(
                            pc.getUserName(), new String(pc.getPassword()));
+        } else {
+            return ((XAConnectionFactory)cf).createXAConnection();
+        }
 
     }
 
     protected javax.jms.Connection createConnection(PasswordCredential pc, 
                     javax.jms.ConnectionFactory cf ) throws JMSException {
-        return ((javax.jms.ConnectionFactory)cf).createConnection(
+        if (pc != null) {
+            return ((javax.jms.ConnectionFactory)cf).createConnection(
                            pc.getUserName(), new String(pc.getPassword()));
+        } else {
+            return ((javax.jms.ConnectionFactory)cf).createConnection();
+        }
     }
 
 }

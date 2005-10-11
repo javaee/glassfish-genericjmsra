@@ -42,16 +42,23 @@ public class ManagedTopicConnectionFactory extends AbstractManagedConnectionFact
 
     protected XAConnection createXAConnection(PasswordCredential pc, 
                     javax.jms.ConnectionFactory cf ) throws JMSException {
-        return ((XATopicConnectionFactory)cf).createXATopicConnection(
+        if (pc != null) {
+            return ((XATopicConnectionFactory)cf).createXATopicConnection(
                            pc.getUserName(), new String(pc.getPassword()));
+        } else {
+            return ((XATopicConnectionFactory)cf).createXATopicConnection();
+        }
 
     }
 
     protected Connection createConnection(PasswordCredential pc, 
                     javax.jms.ConnectionFactory cf ) throws JMSException {
-        return ((TopicConnectionFactory)cf).createTopicConnection(
+        if (pc != null) {
+            return ((TopicConnectionFactory)cf).createTopicConnection(
                            pc.getUserName(), new String(pc.getPassword()));
-
+        } else {
+            return ((TopicConnectionFactory)cf).createTopicConnection();
+        }
     }
 
 
