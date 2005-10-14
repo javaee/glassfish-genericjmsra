@@ -1,7 +1,7 @@
 Release Notes - Generic Resource Adapter for JMS 
 ------------------------------------------------
 
-0.9: First public release of Generic Resource Adapter for JMS
+1.0: First public release of Generic Resource Adapter for JMS
 
 Principal Contributors: Binod PG, Sivakumar Thyagarajan and V.Narayanan
 
@@ -12,3 +12,5 @@ https://genericjmsra.dev.java.net/source/browse/*checkout*/genericjmsra/docs/use
 Please use the java.net project forums/mailing list available at 
 https://genericjmsra.dev.java.net/servlets/ProjectMailingListList for your comments/feedback 
 
+Fixes afavilable in 1.0 release are available at
+https://genericjmsra.dev.java.net/issues/buglist.cgi?component=genericjmsra&keywords=fixed1.0
