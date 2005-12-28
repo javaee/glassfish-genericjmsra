@@ -67,8 +67,12 @@ public class InboundJmsResourcePool implements ServerSessionPool {
             if (consumer.getSpec().getSupportsXA()) {
                 XAConnectionFactory xacf = (XAConnectionFactory) 
                                        consumer.getConnectionFactory();
-                this.con = xacf.createXAConnection(consumer.getSpec().getUserName(), consumer.getSpec().getPassword());
-                this.dmdCon = xacf.createXAConnection();
+                this.con = createXAConnection(xacf);
+                ConnectionFactory cf = (ConnectionFactory) 
+                                       consumer.getDmdConnectionFactory();
+                if ( consumer.getSpec().getSendBadMessagesToDMD() == true) {
+                    this.dmdCon = createDmdConnection(cf);
+                }
             } else {
                 if ( ! (consumer.getConnectionFactory() instanceof ConnectionFactory)) {
                     String msg = sm.getString("classtype_not_correct", 
@@ -76,7 +80,7 @@ public class InboundJmsResourcePool implements ServerSessionPool {
                     throw new ResourceException (msg);
                 }
                 cf = (ConnectionFactory) consumer.getConnectionFactory();
-                this.con = cf.createConnection(consumer.getSpec().getUserName(), consumer.getSpec().getPassword());
+                this.con = createConnection(cf);
             }
             stopped = false;
         } catch (JMSException e ) {
@@ -101,14 +105,117 @@ public class InboundJmsResourcePool implements ServerSessionPool {
         Session sess = null;
         XAResource xar = null;
         if (transacted) {
-            sess = ((XAConnection) con).createXASession();
-            xar = ((XASession) sess).getXAResource();
+            sess = createXASession((XAConnection) con);
+            xar = getXAResource((XASession) sess);
             _logger.log(Level.FINE, "Created new XA ServerSession");
         } else {
-            sess = con.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            sess = createSession(con);
             _logger.log(Level.FINE, "Created new ServerSession");
         }
         return new InboundJmsResource(sess, this, xar);
+    }
+
+    XAConnection createXAConnection(XAConnectionFactory xacf) throws JMSException {
+        XAConnection xac = null;
+        String user = consumer.getSpec().getUserName();
+        String password = consumer.getSpec().getPassword();
+        if (isQueue()) {
+            xac = ((XAQueueConnectionFactory) xacf).createXAQueueConnection(user, password);
+        } else if (isTopic()) {
+            xac = ((XATopicConnectionFactory) xacf).createXATopicConnection(user, password);
+        } else {
+            xac = xacf.createXAConnection(user, password);
+        }
+        return xac;
+    }
+
+    XASession createXASession(XAConnection con) throws JMSException {
+        XASession result = null;
+        if (isQueue()) {
+           result = ((XAQueueConnection)con).createXAQueueSession();
+        } else if (isTopic()) {
+           result = ((XATopicConnection)con).createXATopicSession();
+        } else {
+           result = con.createXASession();
+        }
+        return result;
+    }
+
+    private XAResource getXAResource(XASession session) throws JMSException {
+        XAResource result = null;
+        if (isTopic()) {
+            result = ((XATopicSession) session).getXAResource();
+        } else if (isQueue()) {
+            result = ((XAQueueSession) session).getXAResource();
+        } else {
+            result = session.getXAResource();
+        }
+        return result;
+    }
+
+    Connection createConnection(ConnectionFactory cf) throws JMSException {
+        Connection con = null;
+        String user = consumer.getSpec().getUserName();
+        String password = consumer.getSpec().getPassword();
+        if (isTopic()) {
+            con = ((TopicConnectionFactory) cf).createTopicConnection(user, password);
+        } else if (isQueue()) {
+            con = ((QueueConnectionFactory) cf).createQueueConnection(user, password);
+        } else {
+            con = cf.createConnection(user, password);
+        }
+        return con;
+    }
+
+    Session createSession(Connection con) throws JMSException {
+        Session sess = null;
+        if (isTopic()) {
+            sess = ((TopicConnection) con).createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
+        } else if (isQueue()) {
+            sess = ((QueueConnection) con).createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
+        } else {
+            sess = con.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        }
+        return sess;
+    }
+
+    ConnectionConsumer createConnectionConsumer(Destination dest, 
+        String name, int maxMessages) throws JMSException {
+        ConnectionConsumer consumer = null;
+        Connection con = getConnection();
+        if (isTopic()) {
+            consumer = ((TopicConnection) con).
+                       createConnectionConsumer((Topic) dest, name, this, maxMessages);
+        } else if (isQueue()) {
+            consumer = ((QueueConnection) con).
+                       createConnectionConsumer((javax.jms.Queue) dest, name, this, maxMessages);
+        } else {
+            consumer = con.
+                       createConnectionConsumer(dest, name, this, maxMessages);
+        }
+        return consumer;
+    }
+
+    Connection createDmdConnection(ConnectionFactory cf) throws JMSException {
+        Connection con = null;
+        String user = consumer.getSpec().getUserName();
+        String password = consumer.getSpec().getPassword();
+        if ( consumer.getSpec().getDeadMessageDestinationType().equals(Constants.TOPIC) ) {
+            con = ((TopicConnectionFactory) cf).createTopicConnection(user, password);
+        } else if ( consumer.getSpec().getDeadMessageDestinationType().equals(Constants.QUEUE) ) {
+            con = ((QueueConnectionFactory) cf).createQueueConnection(user, password);
+        } else {
+            con = cf.createConnection(user, password);
+        }
+        return con;
+    }
+
+    private boolean isTopic() {
+        return consumer.getSpec().getDestinationType().equals(Constants.TOPIC); 
+    }
+
+    private boolean isQueue() {
+        return consumer.getSpec().getDestinationType().equals(Constants.QUEUE); 
     }
 
     public ServerSession getServerSession() throws JMSException {

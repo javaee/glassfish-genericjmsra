@@ -34,7 +34,8 @@ public class ActivationSpec extends GenericJMSRAProperties
     private String cfProperties;
     private String destJndiName;
     private String destProperties;
-    private String destinationType;
+    private String destinationType = Constants.DESTINATION;
+    private String dmType = Constants.DESTINATION;
     private String messageSelector;
     private String subscriptionDurability = Constants.NONDURABLE;
     private String subscriptionName;
@@ -49,7 +50,9 @@ public class ActivationSpec extends GenericJMSRAProperties
     private boolean isDmd = false;
     private String dmClassName; 
     private String dmJndiName; 
+    private String dmCfJndiName; 
     private String dmProperties; 
+    private String dmCfProperties; 
 
     private static Logger logger;
     static {
@@ -175,6 +178,26 @@ public class ActivationSpec extends GenericJMSRAProperties
         this.dmJndiName = jndiName;
     }
 
+    public void setDeadMessageConnectionFactoryProperties(String p) {
+        this.dmCfProperties = p;
+    }
+
+    public String getDeadMessageConnectionFactoryProperties() {
+        return this.dmCfProperties;
+    }
+
+    public void setDeadMessageConnectionFactoryJndiName(String jndiName) {
+        this.dmCfJndiName = jndiName;
+    }
+
+    public String getDeadMessageConnectionFactoryJndiName() {
+        return this.dmCfJndiName;
+    }
+
+    public void setDeadMessageDestinationJndiName(String jndiName) {
+        this.dmJndiName = jndiName;
+    }
+
     public String getDeadMessageDestinationJndiName() {
         return this.dmJndiName;
     }
@@ -193,6 +216,14 @@ public class ActivationSpec extends GenericJMSRAProperties
 
     public String getDeadMessageDestinationProperties() {
         return this.dmProperties;
+    }
+
+    public String getDeadMessageDestinationType() {
+        return this.dmType;
+    }
+
+    public void setDeadMessageDestinationType(String dmType) {
+        this.dmType = dmType;
     }
           
     public void validate() throws InvalidPropertyException{
@@ -225,11 +256,6 @@ public class ActivationSpec extends GenericJMSRAProperties
                    throw new InvalidPropertyException(msg);
                 }
             } else {
-                if (StringUtils.isNull(getDeadMessageDestinationClassName())){
-                   String msg = sm.getString("dmd_class_null");
-                   throw new InvalidPropertyException(msg);
-                }
-
                 if (StringUtils.isNull(getDeadMessageDestinationProperties())){
                    String msg = sm.getString("dmd_props_null");
                    throw new InvalidPropertyException(msg);
@@ -249,9 +275,12 @@ public class ActivationSpec extends GenericJMSRAProperties
         s = s + "{SubscriptionName = " + getSubscriptionName() + "},";
         s = s + "{DestinationJNDIName = " + getDestinationJndiName() + "},";
         s = s + "{DestinationType = " + getDestinationType() + "},";
+        s = s + "{DeadMessageDestinationType = " + getDeadMessageDestinationType() + "},";
         s = s + "{MaxPoolSize = " + getMaxPoolSize() + "},";
         s = s + "{DestinationProperties = " + getDestinationProperties() + "},";
         s = s + "{DeadMessageDestinationJndiName = " + getDeadMessageDestinationJndiName() + "},";
+        s = s + "{DeadMessageConnectionFactoryJndiName = " + getDeadMessageConnectionFactoryJndiName() + "},";
+        s = s + "{DeadMessageConnectionFactoryProperties = " + getDeadMessageConnectionFactoryProperties() + "},";
         s = s + "{DeadMessageDestinationClassName = " + getDeadMessageDestinationClassName() + "},";
         s = s + "{DeadMessageDestinationProperties = " + getDeadMessageDestinationProperties() + "},";
         s = s + "{SendBadMessagesToDMD = " + getSendBadMessagesToDMD() + "},";

@@ -50,6 +50,7 @@ public class EndpointConsumer  {
     private GenericJMSRA ra = null;
     private ActivationSpec spec = null;
     Object cf = null;
+    Object dmdCf = null;
     Destination dest = null;
     Destination dmd = null;
     InboundJmsResourcePool jmsPool = null;
@@ -71,6 +72,10 @@ public class EndpointConsumer  {
     public EndpointConsumer(javax.resource.spi.ActivationSpec actspec) 
                                                   throws ResourceException {
         this(null, actspec);
+    }
+
+    public Object getDmdConnectionFactory() {
+        return dmdCf;
     }
 
     public Object getConnectionFactory() {
@@ -137,8 +142,7 @@ public class EndpointConsumer  {
                 (javax.jms.Topic)dst, spec.getSubscriptionName(), spec.getMessageSelector(), pool,1 );
                 logger.log(Level.FINE, "Created durable connection consumer" + dst);
             } else {
-                consmr = con.createConnectionConsumer(
-                dst, spec.getMessageSelector(), pool,1 );
+                consmr = pool.createConnectionConsumer(dst, spec.getMessageSelector(),1 );
                 logger.log(Level.FINE, "Created non durable connection consumer" + dst);
             }
 
@@ -238,6 +242,16 @@ public class EndpointConsumer  {
         }
     }
 
+    private String getAppropriateDMDCFClassName() throws ResourceException{
+        if (this.spec.getDeadMessageDestinationType().equalsIgnoreCase(Constants.QUEUE)) {
+            return this.spec.getQueueConnectionFactoryClassName();
+        } else if (this.spec.getDeadMessageDestinationType().equalsIgnoreCase(Constants.TOPIC)) {
+            return this.spec.getTopicConnectionFactoryClassName();
+        } else {
+            return this.spec.getConnectionFactoryClassName();
+        }
+    }
+
     private void initializeAdministeredObjects() throws ResourceException {
 
         String className = getAppropriateCFClassName();
@@ -255,8 +269,8 @@ public class EndpointConsumer  {
             cfBuilder = obf.createUsingClassName(className);
             cfBuilder.setProperties(this.spec.getConnectionFactoryProperties());
             destBuilder = obf.createUsingClassName(
-                            getDestinationClassNameFromType(
-                                            this.spec.getDestinationType()));
+                          getDestinationClassNameFromType(
+                          this.spec.getDestinationType()));
             destBuilder.setProperties(this.spec.getDestinationProperties());
         }
         String setMethod = spec.getCommonSetterMethodName();
@@ -268,23 +282,36 @@ public class EndpointConsumer  {
         this.cf = cfBuilder.build();
         this.dest = (Destination) destBuilder.build();
 
-
         ObjectBuilder dmdBuilder = null;
+        ObjectBuilder dmdCfBuilder = null;
         if (spec.getSendBadMessagesToDMD()) {
             if (spec.getProviderIntegrationMode().equalsIgnoreCase(Constants.JNDI_BASED)) {
+                dmdCfBuilder =   obf.createUsingJndiName(
+                                 this.spec.getDeadMessageConnectionFactoryJndiName(),
+                                 this.spec.getJndiProperties());
                 dmdBuilder = obf.createUsingJndiName(
                              this.spec.getDeadMessageDestinationJndiName(),
                              this.spec.getJndiProperties());
             } else {
-                dmdBuilder = obf.createUsingClassName(spec.getDeadMessageDestinationClassName());
+                if (this.spec.getDeadMessageDestinationClassName() == null) {
+                    dmdCfBuilder = obf.createUsingClassName(getAppropriateDMDCFClassName());
+                    dmdCfBuilder.setProperties(this.spec.getDeadMessageConnectionFactoryProperties());
+                    dmdBuilder = obf.createUsingClassName(
+                    getDestinationClassNameFromType(this.spec.getDeadMessageDestinationType()));
+                } else {
+                    dmdCfBuilder = obf.createUsingClassName(getAppropriateCFClassName());
+                    dmdCfBuilder.setProperties(this.spec.getConnectionFactoryProperties());
+                    dmdBuilder = obf.createUsingClassName(this.spec.getDeadMessageDestinationClassName());
+                }
                 dmdBuilder.setProperties(this.spec.getDeadMessageDestinationProperties());
             }
             if (isNotNull(setMethod)) { 
                 dmdBuilder.setCommonSetterMethodName(setMethod);
+                dmdCfBuilder.setCommonSetterMethodName(setMethod);
             }
             this.dmd = (Destination) dmdBuilder.build();
+            this.dmdCf = dmdCfBuilder.build();
         }
-
     }
 
     private String getDestinationClassNameFromType(String destinationType) {
@@ -292,8 +319,9 @@ public class EndpointConsumer  {
             return this.spec.getQueueClassName();
         } else if(destinationType.equals(Constants.TOPIC)) {
             return this.spec.getTopicClassName();
+        } else {
+            return this.spec.getUnifiedDestinationClassName();
         }
-        return null;
     }
 
     private boolean isNotNull(String s) {

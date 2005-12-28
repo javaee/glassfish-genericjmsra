@@ -73,11 +73,25 @@ public class InboundXAResourceProxy extends AbstractXAResourceType {
      *            One of TMSUCCESS, TMFAIL, or TMSUSPEND
      */
     public void end(Xid xid, int flags) throws XAException {
-        xar.end(savedXid(), flags);
-        if (flags == XAResource.TMSUSPEND) {
-            suspended = true;
+        if (beingRedelivered() == false ) {
+            xar.end(savedXid(), flags);
+            if (flags == XAResource.TMSUSPEND) {
+                suspended = true;
+            }
+            endCalled = true;
         }
-        endCalled = true;
+    }
+
+    /**
+     * When message is being redelivered, i.e, end is called 
+     * and that too without TMSUSPEND flag, return true.
+     *
+     * This also assumes that, when the message is being 
+     * redelivered, the MDB wouldnt be coded to such that
+     * transaction would need to be suspended.
+     */
+    private boolean beingRedelivered() {
+        return endCalled == true && suspended == false;
     }
 
     /**
@@ -164,12 +178,6 @@ public class InboundXAResourceProxy extends AbstractXAResourceType {
      */
     public void rollback(Xid xid) throws XAException {
         rolledback = true;
-        //the mc.transactionCompleted call has come here becasue
-        //the transaction *actually* completes after the flow
-        //reaches here. the end() method might not really signal
-        //completion of transaction in case the transaction is
-        //suspended. In case of transaction suspension, the end
-        //method is still called by the transaction manager
         if (toRollback) {
             xar.rollback(savedXid());
         }
@@ -198,6 +206,9 @@ public class InboundXAResourceProxy extends AbstractXAResourceType {
      * @return flags One of TMNOFLAGS, TMJOIN, or TMRESUME
      */
     public void start(Xid xid, int flags) throws XAException {
+        if (beingRedelivered() ) {
+            return;
+        }
         int actualflag = flags;
         if (this.savedxid == null) {
             this.savedxid = xid;
@@ -212,7 +223,6 @@ public class InboundXAResourceProxy extends AbstractXAResourceType {
                     actualflag = XAResource.TMJOIN;
                 }
             } 
-
         } 
         xar.start(savedXid(), actualflag);
     }

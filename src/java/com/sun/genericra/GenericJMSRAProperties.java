@@ -56,6 +56,7 @@ public class GenericJMSRAProperties implements ResourceAdapterAssociation, Seria
 
     //MoM specific constants.
     private String queueCFClassName;
+    private String CFClassName;
     private String topicCFClassName;
     private String cfClassName;
     
@@ -63,6 +64,7 @@ public class GenericJMSRAProperties implements ResourceAdapterAssociation, Seria
     private String xATopicConnectionFactoryClassName;
     private String xAConnectionFactoryClassName;
     
+    private String destinationClassName;
     private String queueClassName;
     private String topicClassName;
 
@@ -130,6 +132,21 @@ public class GenericJMSRAProperties implements ResourceAdapterAssociation, Seria
             return this.topicClassName;
         } else if (raprops != null) {
             return raprops.topicClassName;
+        } else {
+            return null;
+        }
+    }
+    
+    public void setUnifiedDestinationClassName(String className) {
+        logger.log(Level.FINEST, "setUnifiedDestinationClassName :" + className);
+        this.destinationClassName = className;
+    }
+
+    public String getUnifiedDestinationClassName() {
+        if (this.destinationClassName != null) {
+            return this.destinationClassName;
+        } else if (raprops != null) {
+            return raprops.destinationClassName;
         } else {
             return null;
         }
@@ -373,6 +390,7 @@ public class GenericJMSRAProperties implements ResourceAdapterAssociation, Seria
         
         s = s + "{QueueClassName = " + getQueueClassName() + "},";
         s = s + "{TopicClassName = " + getTopicClassName() + "},";
+        s = s + "{UnifiedDestinationClassName = " + getUnifiedDestinationClassName() + "},";
         
         s = s + "{ConnectionFactoryProperties = " + getConnectionFactoryProperties() + "},";
         s = s + "{JndiProperties = " + getJndiProperties() + "},";

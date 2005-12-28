@@ -154,8 +154,15 @@ public class MessageProducerProxy implements QueueSender, TopicPublisher {
     }
 
     private Message unwrapDestinations(Message msg) throws JMSException {
-         msg.setJMSReplyTo(unwrapDestinations(msg.getJMSReplyTo()));
-         msg.setJMSDestination(unwrapDestinations(msg.getJMSDestination()));
+         Destination jmsReply = msg.getJMSReplyTo();
+         if (jmsReply != null) {
+             msg.setJMSReplyTo(unwrapDestinations(jmsReply));
+         }
+
+         Destination jmsDest = msg.getJMSDestination();
+         if (jmsDest != null) {
+             msg.setJMSDestination(unwrapDestinations(jmsDest));
+         }
          return msg;
     }
 

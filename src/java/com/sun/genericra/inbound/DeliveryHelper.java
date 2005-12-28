@@ -75,10 +75,15 @@ public class DeliveryHelper {
         return this.xar;
     }
 
+    private DeadMessageProducer createProducer(Connection con, Destination dest) 
+        throws JMSException {
+        return new DeadMessageProducer(con, jmsResource.getPool(), dest);
+    }
+
     public void sendMessageToDMD() {
         _logger.log(Level.FINE, "Trying to send message  to DMD :" + dest);
         Session session = null;
-        MessageProducer msgProducer = null;
+        DeadMessageProducer msgProducer = null;
         try {
             if (this.dest != null && this.spec.getSendBadMessagesToDMD()) {
                 _logger.log(Level.FINE, "Sending the message to DMD :" + dest);
@@ -88,8 +93,7 @@ public class DeliveryHelper {
                 }
                 localXar.prepare(null);
                 Connection connection = jmsResource.getPool().getConnectionForDMD();
-                session = connection.createSession(false,Session.AUTO_ACKNOWLEDGE);
-                msgProducer = session.createProducer(this.dest);
+                msgProducer = createProducer(connection, this.dest);
                 msgProducer.send(this.msg);
                 localXar.commit(null,false);
             }
@@ -105,13 +109,6 @@ public class DeliveryHelper {
                     msgProducer.close();
                 } catch (Exception me) {
                     me.printStackTrace();
-                }
-            }
-            if (session != null) {
-                try {
-                    session.close();
-                } catch (Exception se) {
-                    se.printStackTrace();
                 }
             }
         }

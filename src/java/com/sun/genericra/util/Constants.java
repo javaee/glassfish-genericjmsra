@@ -58,6 +58,11 @@ public final class Constants  {
     public static final String TOPIC = "javax.jms.Topic";
 
     /**
+     * String indicating a destination
+     */
+    public static final String DESTINATION = "javax.jms.Destination";
+
+    /**
      * String indicating a durable
      */
     public static final String DURABLE = "Durable";

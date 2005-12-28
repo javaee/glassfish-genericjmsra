@@ -351,7 +351,11 @@ Variables Used:
         depends="init-common, create-connector-connpool"/>
 
 <target name="create-connector-connpool" depends="init-common">
-  <echo message="asadmin create-connector-connection-pool ${as.props} --raname ${ra.name} --connectiondefinition ${connection.defname} --target ${appserver.instance.name} ${connector.conpool.name}"/>
+  <condition property="conpool.name" value="--property ${connector.pool.property} ${connector.conpool.name}"
+             else="${connector.conpool.name}">
+       <isset property="connector.pool.property"/>
+  </condition>
+  <echo message="asadmin create-connector-connection-pool ${as.props} --raname ${ra.name} --connectiondefinition ${connection.defname} --target ${appserver.instance.name} ${conpool.name}"/>
   <exec executable="${ASADMIN}" failonerror="false">
     <arg line="create-connector-connection-pool"/>
     <arg line="${as.props}"/>
@@ -359,7 +363,7 @@ Variables Used:
     <arg line="--raname ${ra.name}"/>
     <arg line="--connectiondefinition ${connection.defname}"/>
     <arg line="--target ${appserver.instance.name}"/>
-    <arg line="${connector.conpool.name}"/>
+    <arg line="${conpool.name}"/>
   </exec>
 </target>
 
