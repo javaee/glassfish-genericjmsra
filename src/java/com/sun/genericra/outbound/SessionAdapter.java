@@ -44,6 +44,7 @@ import javax.jms.TopicPublisher;
 import javax.jms.TopicSession;
 import javax.jms.TopicSubscriber;
 import java.util.logging.*;
+import java.lang.reflect.*;
 import com.sun.genericra.util.*;
 
 /**
@@ -178,17 +179,20 @@ public class SessionAdapter implements Session, TopicSession, QueueSession {
 
     public BytesMessage createBytesMessage() throws JMSException {
         checkIfClosed();
-        return this.physicalSession.createBytesMessage();
+        return (BytesMessage) createProxyMessage
+        (this.physicalSession.createBytesMessage());
     }
 
     public MapMessage createMapMessage() throws JMSException {
         checkIfClosed();
-        return this.physicalSession.createMapMessage();
+        return (MapMessage) createProxyMessage
+        (this.physicalSession.createMapMessage());
     }
 
     public Message createMessage() throws JMSException {
         checkIfClosed();
-        return this.physicalSession.createMessage();
+        return (Message) createProxyMessage
+        (this.physicalSession.createMessage());
     }
 
     public MessageListener getMessageListener() throws JMSException {
@@ -203,12 +207,14 @@ public class SessionAdapter implements Session, TopicSession, QueueSession {
 
     public ObjectMessage createObjectMessage() throws JMSException {
         checkIfClosed();
-        return this.physicalSession.createObjectMessage();
+        return (ObjectMessage) 
+        createProxyMessage(this.physicalSession.createObjectMessage());
     }
 
     public StreamMessage createStreamMessage() throws JMSException {
         checkIfClosed();
-        return this.physicalSession.createStreamMessage();
+        return (StreamMessage) 
+        createProxyMessage(this.physicalSession.createStreamMessage());
     }
 
     public TemporaryQueue createTemporaryQueue() throws JMSException {
@@ -227,7 +233,8 @@ public class SessionAdapter implements Session, TopicSession, QueueSession {
 
     public TextMessage createTextMessage() throws JMSException {
         checkIfClosed();
-        return this.physicalSession.createTextMessage();
+        return (TextMessage) 
+        createProxyMessage(this.physicalSession.createTextMessage());
     }
 
     public MessageConsumer createConsumer(Destination dest) throws JMSException {
@@ -251,7 +258,8 @@ public class SessionAdapter implements Session, TopicSession, QueueSession {
     public ObjectMessage createObjectMessage(Serializable ser)
                     throws JMSException {
         checkIfClosed();
-        return this.physicalSession.createObjectMessage(ser);
+        return (ObjectMessage) 
+        createProxyMessage(this.physicalSession.createObjectMessage(ser));
     }
 
     public Queue createQueue(String name) throws JMSException {
@@ -268,7 +276,8 @@ public class SessionAdapter implements Session, TopicSession, QueueSession {
 
     public TextMessage createTextMessage(String msg) throws JMSException {
         checkIfClosed();
-        return this.physicalSession.createTextMessage(msg);
+        return (TextMessage) 
+        createProxyMessage(this.physicalSession.createTextMessage(msg));
     }
 
     public Topic createTopic(String name) throws JMSException {
@@ -408,5 +417,20 @@ public class SessionAdapter implements Session, TopicSession, QueueSession {
     
     private void debug(String s) {
         logger.log(Level.FINEST, "[SessionAdapter] " + s);
+    }
+
+    private Object createProxyMessage(Message msg) {
+        Object mcf = ch.getManagedConnection().getManagedConnectionFactory();
+        boolean wrap = ((AbstractManagedConnectionFactory) mcf).getUseProxyMessages();
+        if (wrap) {
+            InvocationHandler ih = new ProxyMessage(msg);
+            Class[] intfcs = { javax.jms.Message.class, javax.jms.BytesMessage.class,
+                           javax.jms.MapMessage.class, javax.jms.ObjectMessage.class,
+                           javax.jms.StreamMessage.class, javax.jms.TextMessage.class};
+            return Proxy.newProxyInstance(this.getClass().getClassLoader(), intfcs, ih);
+        } else {
+            return msg;
+        }
+           
     }
 }

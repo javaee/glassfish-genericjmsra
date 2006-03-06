@@ -228,10 +228,10 @@ public class ConnectionHandle implements javax.jms.Connection, TopicConnection,
 
     public void cleanup() throws JMSException {
         //Iterate through Sessions and close them.
-        for (Iterator iter = this.sessions.iterator(); iter.hasNext();) {
-            SessionAdapter sa = (SessionAdapter) iter.next();
+        Object[] sessionObjects = this.sessions.toArray();
+        for (int i=0; i < sessionObjects.length; i++) {
+            SessionAdapter sa = (SessionAdapter) sessionObjects[i];
             sa.setInvalid();
-            iter.remove(); 
         }
     }
 

@@ -52,6 +52,7 @@ public abstract class AbstractManagedConnectionFactory extends GenericJMSRAPrope
     //by default, run as non-ACC. Use System Property or MCF property to enable
     private static boolean inAppClientContainer = false; 
     private boolean connectionValidationEnabled = false; //disabled by default
+    private boolean useProxyMessages = false; //disabled by default
 
     //MCF state
     private static final String INACC_SYSTEM_PROP_KEY = 
@@ -228,6 +229,21 @@ public abstract class AbstractManagedConnectionFactory extends GenericJMSRAPrope
      */
     public boolean isInAppClientContainer() {
         return inAppClientContainer;
+    }
+
+    /**
+     * @return Whether to use a Proxy object to wrap javax.jms.Message objects.
+     */
+    public boolean getUseProxyMessages() {
+         return useProxyMessages;
+    }
+
+    /**
+     * @param flag Indicating whether to use a Proxy object to wrap 
+     *             javax.jms.Message objects.
+     */
+    public void  setUseProxyMessages(boolean flag) {
+         this.useProxyMessages = flag;
     }
     
     /**
