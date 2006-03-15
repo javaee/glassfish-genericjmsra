@@ -29,7 +29,7 @@
     <icon></icon>
     <vendor-name>Sun Microsystems, Inc.</vendor-name>
     <eis-type>Java Message Service v 1.1</eis-type>
-    <resourceadapter-version>1.0</resourceadapter-version>
+    <resourceadapter-version>1.5</resourceadapter-version>
 
     <resourceadapter>
         <resourceadapter-class>
