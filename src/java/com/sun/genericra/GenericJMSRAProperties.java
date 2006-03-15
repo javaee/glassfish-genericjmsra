@@ -287,7 +287,6 @@ public class GenericJMSRAProperties implements ResourceAdapterAssociation, Seria
     }
                                                                                                                                               
     public void setPassword(String password) {
-        logger.log(Level.FINEST, "setPassword :" + password);
         this.password = password;
     }
 

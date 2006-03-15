@@ -1,14 +1,23 @@
 Release Notes - Generic Resource Adapter for JMS 
 ------------------------------------------------
 
-1.0a : Releasing first version of Generic Resource Adapter for JMS built with JDK 1.4.
+v1.5 : Support for JMS 1.0.2 specification has been added in this release. In order to provide this support the following new properties were added. See issue #11 for more information
+1. UnifiedDestinationClassName (for RA, AdminObject and MCF, applicable only for
+javabean mode)
+2. DeadMessageDestinationType (For MDB ActivationSpec, applicable for both
+javabean and jndi modes of integration)
+3. DeadMessageDestinationJndiName (for MDB Activation type. Applicable for only
+jndi mode)
+4. DeadMessageConnectionFactoryJndiName(for MDB Activation type. Applicable for
+only jndi mode)
+5. DeadMessageConnectionFactoryProperties(for MDB Activation type. Applicable
+for only javabean mode)
 
-All other details are the same as 1.0 release as shown below.
-
-
-1.0: First public release of Generic Resource Adapter for JMS
+Issues fixed in this relase are available at
+https://genericjmsra.dev.java.net/issues/buglist.cgi?component=genericjmsra&subcomponent=core&issue_status=RESOLVED&target_milestone=1.5
 
 Principal Contributors: Binod PG, Sivakumar Thyagarajan and V.Narayanan
+A lot of developers have also contributed, in various forms, to this release via the dev and user mailing lists.
 
 Feature list and issues are available at docs/userguide.html in the full 
 distribution bundle. User guide is also available at 
@@ -17,5 +26,18 @@ https://genericjmsra.dev.java.net/source/browse/*checkout*/genericjmsra/docs/use
 Please use the java.net project forums/mailing list available at 
 https://genericjmsra.dev.java.net/servlets/ProjectMailingListList for your comments/feedback 
 
-Fixes afavilable in 1.0 release are available at
+Fixes available in 1.0 release are available at
+https://genericjmsra.dev.java.net/issues/buglist.cgi?component=genericjmsra&keywords=fixed1.0
+
+
+Earlier releases
+----------------
+1.0a : Releasing first version of Generic Resource Adapter for JMS built with JDK 1.4.
+
+All other details are the same as 1.0 release as shown below.
+
+
+1.0: First public release of Generic Resource Adapter for JMS
+
+Fixes available in 1.0 release are available at
 https://genericjmsra.dev.java.net/issues/buglist.cgi?component=genericjmsra&keywords=fixed1.0
