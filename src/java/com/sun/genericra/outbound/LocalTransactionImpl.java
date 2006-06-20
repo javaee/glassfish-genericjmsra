@@ -9,16 +9,18 @@
  *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  *
  */
 package com.sun.genericra.outbound;
 
+import com.sun.genericra.util.ExceptionUtils;
+
 import javax.resource.ResourceException;
 import javax.resource.spi.LocalTransactionException;
-import com.sun.genericra.util.ExceptionUtils;
+
 
 /**
  * <code>LocalTransaction</code> implementation for Generic JMS Resource Adapter.
@@ -26,9 +28,8 @@ import com.sun.genericra.util.ExceptionUtils;
  * @author Sivakumar Thyagarajan
  */
 public class LocalTransactionImpl implements javax.resource.spi.LocalTransaction {
-    
     private ManagedConnection mc;
-    
+
     /**
      * Constructor for <code>LocalTransaction</code>.
      * @param   mc  <code>ManagedConnection</code> that returns
@@ -38,7 +39,7 @@ public class LocalTransactionImpl implements javax.resource.spi.LocalTransaction
     public LocalTransactionImpl(ManagedConnection mc) {
         this.mc = mc;
     }
-    
+
     /**
      * Begin a local transaction.
      *
@@ -47,10 +48,10 @@ public class LocalTransactionImpl implements javax.resource.spi.LocalTransaction
         try {
             mc._startLocalTx();
         } catch (Exception e) {
-            throw ExceptionUtils.newResourceException( e );
-        } 
+            throw ExceptionUtils.newResourceException(e);
+        }
     }
-    
+
     /**
      * Commit a local transaction.
      */
@@ -58,10 +59,10 @@ public class LocalTransactionImpl implements javax.resource.spi.LocalTransaction
         try {
             mc._endLocalTx(true);
         } catch (Exception e) {
-            throw ExceptionUtils.newResourceException( e );
-        } 
+            throw ExceptionUtils.newResourceException(e);
+        }
     }
-    
+
     /**
      * Rollback a local transaction.
      */
@@ -69,8 +70,7 @@ public class LocalTransactionImpl implements javax.resource.spi.LocalTransaction
         try {
             mc._endLocalTx(false);
         } catch (Exception e) {
-            throw ExceptionUtils.newResourceException( e );
-        } 
+            throw ExceptionUtils.newResourceException(e);
+        }
     }
-    
 }

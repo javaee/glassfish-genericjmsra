@@ -9,7 +9,7 @@
  *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  *
@@ -17,46 +17,47 @@
 package com.sun.genericra.outbound;
 
 import com.sun.genericra.util.Constants;
+
 import javax.jms.*;
+
 import javax.resource.spi.security.PasswordCredential;
 
+
 /**
- * MCF for javax.jms.QueueConnectionFactory 
+ * MCF for javax.jms.QueueConnectionFactory
  * @author Sivakumar Thyagarajan
  */
-public class ManagedQueueConnectionFactory extends AbstractManagedConnectionFactory {
-
+public class ManagedQueueConnectionFactory
+    extends AbstractManagedConnectionFactory {
     public ManagedQueueConnectionFactory() {
         this.destinationMode = Constants.QUEUE_SESSION;
     }
 
     protected String getActualConnectionFactoryClassName() {
-        
-        if (this.getSupportsXA()){
+        if (this.getSupportsXA()) {
             return this.getXAQueueConnectionFactoryClassName();
-        } else {       
+        } else {
             return this.getQueueConnectionFactoryClassName();
         }
     }
 
-    protected XAConnection createXAConnection(PasswordCredential pc, 
-                    javax.jms.ConnectionFactory cf ) throws JMSException {
+    protected XAConnection createXAConnection(PasswordCredential pc,
+        javax.jms.ConnectionFactory cf) throws JMSException {
         if (pc != null) {
-            return ((XAQueueConnectionFactory)cf).createXAQueueConnection(
-                           pc.getUserName(), new String(pc.getPassword()));
+            return ((XAQueueConnectionFactory) cf).createXAQueueConnection(pc.getUserName(),
+                new String(pc.getPassword()));
         } else {
-            return ((XAQueueConnectionFactory)cf).createXAQueueConnection();
+            return ((XAQueueConnectionFactory) cf).createXAQueueConnection();
         }
-
     }
 
-    protected Connection createConnection(PasswordCredential pc, 
-                    javax.jms.ConnectionFactory cf ) throws JMSException {
+    protected Connection createConnection(PasswordCredential pc,
+        javax.jms.ConnectionFactory cf) throws JMSException {
         if (pc != null) {
-            return ((QueueConnectionFactory)cf).createQueueConnection(
-                           pc.getUserName(), new String(pc.getPassword()));
+            return ((QueueConnectionFactory) cf).createQueueConnection(pc.getUserName(),
+                new String(pc.getPassword()));
         } else {
-            return ((QueueConnectionFactory)cf).createQueueConnection();
+            return ((QueueConnectionFactory) cf).createQueueConnection();
         }
     }
 }

@@ -9,19 +9,20 @@
  *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  *
  */
 package com.sun.genericra.util;
 
+
 /**
  * Constant values used by Generic Resource Adapter.
- * 
+ *
  * @author Binod P.G
  */
-public final class Constants  {
+public final class Constants {
     /**
      * Logger name used by the resource adapter
      */
@@ -43,7 +44,7 @@ public final class Constants  {
     public static final String JNDI_BASED = "jndi";
 
     /**
-     * Name for Javabean provider integration mode 
+     * Name for Javabean provider integration mode
      */
     public static final String JAVABEAN_BASED = "javabean";
 
@@ -71,14 +72,11 @@ public final class Constants  {
      * String indicating a non-durable
      */
     public static final String NONDURABLE = "Non-Durable";
-
     public static final int UNIFIED_SESSION = 0;
     public static final int TOPIC_SESSION = 1;
     public static final int QUEUE_SESSION = 2;
 
-
     public class LogLevel {
-
         /**
          * String indicating FINEST log level
          */
@@ -108,7 +106,5 @@ public final class Constants  {
          * String indicating SEVERE log level
          */
         public static final String SEVERE = "severe";
-
     }
-
 }

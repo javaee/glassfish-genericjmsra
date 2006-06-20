@@ -9,38 +9,39 @@
  *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  *
  */
 package com.sun.genericra.outbound;
 
-import javax.resource.spi.ManagedConnectionFactory;
 import com.sun.genericra.util.SecurityUtils;
 import com.sun.genericra.util.StringUtils;
+
+import javax.resource.spi.ManagedConnectionFactory;
+
 
 /**
  * Generic JMS resource adapter specific request properties.
  * Username, password and clientId;
  * @author Sivakumar Thyagarajan
  */
-
-public class ConnectionRequestInfo implements 
-                            javax.resource.spi.ConnectionRequestInfo {
+public class ConnectionRequestInfo
+    implements javax.resource.spi.ConnectionRequestInfo {
     private String userName;
     private String password;
     private String clientID;
     private ManagedConnectionFactory mcf;
-    
-    public ConnectionRequestInfo (ManagedConnectionFactory mcf, 
-                    String userName, String password){
+
+    public ConnectionRequestInfo(ManagedConnectionFactory mcf, String userName,
+        String password) {
         this.userName = userName;
         this.password = password;
         this.mcf = mcf;
-        this.clientID = ((AbstractManagedConnectionFactory)mcf).getClientId();
+        this.clientID = ((AbstractManagedConnectionFactory) mcf).getClientId();
     }
-    
+
     public String getClientID() {
         return clientID;
     }
@@ -56,7 +57,7 @@ public class ConnectionRequestInfo implements
     public void setPassword(String password) {
         this.password = password;
     }
-    
+
     public String getUserName() {
         return userName;
     }
@@ -64,13 +65,17 @@ public class ConnectionRequestInfo implements
     public void setUserName(String userName) {
         this.userName = userName;
     }
-    
+
     public boolean equals(Object obj) {
-        if (obj == null) return false;
+        if (obj == null) {
+            return false;
+        }
+
         if (obj instanceof ConnectionRequestInfo) {
             ConnectionRequestInfo other = (ConnectionRequestInfo) obj;
+
             return (StringUtils.isEqual(this.userName, other.userName) &&
-                            StringUtils.isEqual(this.password, other.password));
+            StringUtils.isEqual(this.password, other.password));
         } else {
             return false;
         }
@@ -83,7 +88,7 @@ public class ConnectionRequestInfo implements
      */
     public int hashCode() {
         String result = "" + userName + password;
+
         return result.hashCode();
     }
-
 }

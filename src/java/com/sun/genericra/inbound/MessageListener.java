@@ -9,19 +9,20 @@
  *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  *
  */
 package com.sun.genericra.inbound;
 
-import java.util.logging.Logger;
+import com.sun.genericra.util.*;
+
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.jms.Message;
 
-import com.sun.genericra.util.*;
 
 /**
  * MessageListener for the server session. This is the basic receiver of
@@ -29,27 +30,25 @@ import com.sun.genericra.util.*;
  *
  * @author Binod P.G
  */
-public class MessageListener  implements javax.jms.MessageListener {
-
-    private InboundJmsResource jmsResource;
-    private InboundJmsResourcePool pool;
-    private EndpointConsumer consumer;
-
-
+public class MessageListener implements javax.jms.MessageListener {
     private static Logger _logger;
+
     static {
         _logger = LogUtils.getLogger();
     }
 
     private static boolean debug = false;
+    private InboundJmsResource jmsResource;
+    private InboundJmsResourcePool pool;
+    private EndpointConsumer consumer;
 
-    public MessageListener(InboundJmsResource jmsResource, 
-                           InboundJmsResourcePool pool) {
+    public MessageListener(InboundJmsResource jmsResource,
+        InboundJmsResourcePool pool) {
         this.jmsResource = jmsResource;
         this.consumer = pool.getConsumer();
     }
 
-    public void onMessage(Message message) {
+    public void onMessage(Message message){
         if (debug) {
             _logger.log(Level.FINE, "Consuming the message :" + message);
         }

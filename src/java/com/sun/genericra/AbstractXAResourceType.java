@@ -9,12 +9,27 @@
  *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  *
  */
 package com.sun.genericra;
+
+import com.sun.genericra.inbound.EndpointConsumer;
+import com.sun.genericra.util.*;
+
+import java.io.Serializable;
+
+import java.lang.reflect.Method;
+
+import java.security.*;
+
+import java.util.*;
+import java.util.logging.*;
+
+import javax.jms.*;
+
 import javax.resource.ResourceException;
 import javax.resource.spi.ActivationSpec;
 import javax.resource.spi.BootstrapContext;
@@ -22,30 +37,20 @@ import javax.resource.spi.ResourceAdapter;
 import javax.resource.spi.ResourceAdapterInternalException;
 import javax.resource.spi.endpoint.MessageEndpointFactory;
 import javax.resource.spi.work.WorkManager;
+
 import javax.transaction.xa.XAResource;
-import javax.jms.*;
 
-import java.io.Serializable;
-import java.lang.reflect.Method;
-import java.util.*;
-import java.util.logging.*;
-import java.security.*;
-
-import com.sun.genericra.inbound.EndpointConsumer;
-import com.sun.genericra.util.*;
 
 /**
  * AbstractXAResource object used by all XAResource
- * objects in generic jms ra. The class contains the 
+ * objects in generic jms ra. The class contains the
  * logic to compare the XAResource object, when
  * RMPolicy is set to "One for Physical Connection".
  *
- * @author Binod P.G 
+ * @author Binod P.G
  */
-
-public abstract class AbstractXAResourceType 
-       implements XAResourceType, XAResource {
-
+public abstract class AbstractXAResourceType implements XAResourceType,
+    XAResource {
     private Connection con;
     private String rmPolicy;
 
@@ -84,19 +89,20 @@ public abstract class AbstractXAResourceType
     }
 
     /**
-     * If any one of the resources are configured with 
-     * a policy of "OneForPhysicalConnection", then 
-     * compare physical connection. Otherwise, return true 
+     * If any one of the resources are configured with
+     * a policy of "OneForPhysicalConnection", then
+     * compare physical connection. Otherwise, return true
      * so that the actual XAResource wrapper can delegate it
      * to the underlying XAResource implementation.
      */
     public boolean compare(XAResourceType type) {
-       String rmPerMc = GenericJMSRAProperties.ONE_PER_PHYSICALCONNECTION;
-       if (rmPerMc.equalsIgnoreCase(rmPolicy) || 
-           rmPerMc.equalsIgnoreCase(type.getRMPolicy())) {
-           return type.getConnection().equals(getConnection());
-       } else {
-           return true;
-       }
+        String rmPerMc = GenericJMSRAProperties.ONE_PER_PHYSICALCONNECTION;
+
+        if (rmPerMc.equalsIgnoreCase(rmPolicy) ||
+                rmPerMc.equalsIgnoreCase(type.getRMPolicy())) {
+            return type.getConnection().equals(getConnection());
+        } else {
+            return true;
+        }
     }
 }

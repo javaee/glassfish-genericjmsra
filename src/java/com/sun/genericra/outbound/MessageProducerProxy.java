@@ -9,15 +9,18 @@
  *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  *
  */
 package com.sun.genericra.outbound;
+
 import javax.jms.*;
+
+
 /**
- * MessageProducerProxy. This is used to update messages with 
+ * MessageProducerProxy. This is used to update messages with
  * unwrapped destinations and reply destinations.
  */
 public class MessageProducerProxy implements QueueSender, TopicPublisher {
@@ -26,7 +29,8 @@ public class MessageProducerProxy implements QueueSender, TopicPublisher {
     public MessageProducerProxy(MessageProducer mp) {
         this.mp = mp;
     }
-    public int getDeliveryMode() throws JMSException { 
+
+    public int getDeliveryMode() throws JMSException {
         return getProducer().getDeliveryMode();
     }
 
@@ -59,7 +63,7 @@ public class MessageProducerProxy implements QueueSender, TopicPublisher {
     }
 
     public void setTimeToLive(long l) throws JMSException {
-        getProducer().setTimeToLive (l);
+        getProducer().setTimeToLive(l);
     }
 
     public void setDisableMessageID(boolean b) throws JMSException {
@@ -75,18 +79,19 @@ public class MessageProducerProxy implements QueueSender, TopicPublisher {
         getProducer().send(tmp);
     }
 
-    public void send(Message msg,int i,int j,long l) throws JMSException {
+    public void send(Message msg, int i, int j, long l)
+        throws JMSException {
         Message tmp = unwrapDestinations(msg);
         getProducer().send(tmp, i, j, l);
     }
 
-    public void send(Destination dest,Message msg) throws JMSException {
+    public void send(Destination dest, Message msg) throws JMSException {
         Message tmpMsg = unwrapDestinations(msg);
         Destination tmpDest = unwrapDestinations(dest);
         getProducer().send(tmpDest, tmpMsg);
     }
 
-    public void send(Destination dest,Message msg,int i,int j,long l)
+    public void send(Destination dest, Message msg, int i, int j, long l)
         throws JMSException {
         Message tmpMsg = unwrapDestinations(msg);
         Destination tmpDest = unwrapDestinations(dest);
@@ -101,13 +106,14 @@ public class MessageProducerProxy implements QueueSender, TopicPublisher {
         return getSender().getQueue();
     }
 
-    public void send(javax.jms.Queue queue,Message msg) throws JMSException {
+    public void send(javax.jms.Queue queue, Message msg)
+        throws JMSException {
         Message tmpMsg = unwrapDestinations(msg);
         javax.jms.Queue tmpQueue = unwrapDestinations(queue);
         getSender().send(tmpQueue, tmpMsg);
     }
 
-    public void send(javax.jms.Queue queue,Message msg,int i,int j,long l)
+    public void send(javax.jms.Queue queue, Message msg, int i, int j, long l)
         throws JMSException {
         Message tmpMsg = unwrapDestinations(msg);
         javax.jms.Queue tmpQueue = unwrapDestinations(queue);
@@ -119,7 +125,8 @@ public class MessageProducerProxy implements QueueSender, TopicPublisher {
         getPublisher().publish(tmpMsg);
     }
 
-    public void publish(Message msg,int i,int j,long l) throws JMSException {
+    public void publish(Message msg, int i, int j, long l)
+        throws JMSException {
         Message tmpMsg = unwrapDestinations(msg);
         getPublisher().publish(tmpMsg, i, j, l);
     }
@@ -128,13 +135,14 @@ public class MessageProducerProxy implements QueueSender, TopicPublisher {
         return getPublisher().getTopic();
     }
 
-    public void publish(javax.jms.Topic topic,Message msg) throws JMSException {
+    public void publish(javax.jms.Topic topic, Message msg)
+        throws JMSException {
         Message tmpMsg = unwrapDestinations(msg);
         javax.jms.Topic tmpTopic = unwrapDestinations(topic);
         getPublisher().publish(tmpTopic, tmpMsg);
     }
 
-    public void publish(javax.jms.Topic topic,Message msg,int i,int j,long l)
+    public void publish(javax.jms.Topic topic, Message msg, int i, int j, long l)
         throws JMSException {
         Message tmpMsg = unwrapDestinations(msg);
         javax.jms.Topic tmpTopic = unwrapDestinations(topic);
@@ -154,45 +162,46 @@ public class MessageProducerProxy implements QueueSender, TopicPublisher {
     }
 
     private Message unwrapDestinations(Message msg) throws JMSException {
-         Destination jmsReply = msg.getJMSReplyTo();
-         if (jmsReply != null) {
-             msg.setJMSReplyTo(unwrapDestinations(jmsReply));
-         }
+        Destination jmsReply = msg.getJMSReplyTo();
 
-         Destination jmsDest = msg.getJMSDestination();
-         if (jmsDest != null) {
-             msg.setJMSDestination(unwrapDestinations(jmsDest));
-         }
-         return msg;
+        if (jmsReply != null) {
+            msg.setJMSReplyTo(unwrapDestinations(jmsReply));
+        }
+
+        Destination jmsDest = msg.getJMSDestination();
+
+        if (jmsDest != null) {
+            msg.setJMSDestination(unwrapDestinations(jmsDest));
+        }
+
+        return msg;
     }
 
-    private Destination unwrapDestinations(Destination dest) throws JMSException{
-         if ( (dest instanceof DestinationAdapter)
-            || (dest instanceof QueueProxy)
-            || (dest instanceof TopicProxy)) {
-              return ((DestinationAdapter) dest)._getPhysicalDestination();
-         } else {
-              return dest;
-         }
+    private Destination unwrapDestinations(Destination dest)
+        throws JMSException {
+        if ((dest instanceof DestinationAdapter) ||
+                (dest instanceof QueueProxy) || (dest instanceof TopicProxy)) {
+            return ((DestinationAdapter) dest)._getPhysicalDestination();
+        } else {
+            return dest;
+        }
     }
 
-    private javax.jms.Queue unwrapDestinations(javax.jms.Queue queue) throws JMSException {
-         if (queue instanceof QueueProxy) {
-             return (javax.jms.Queue) 
-             ((DestinationAdapter) queue)._getPhysicalDestination();
-         } else {
-              return queue;
-         }
+    private javax.jms.Queue unwrapDestinations(javax.jms.Queue queue)
+        throws JMSException {
+        if (queue instanceof QueueProxy) {
+            return (javax.jms.Queue) ((DestinationAdapter) queue)._getPhysicalDestination();
+        } else {
+            return queue;
+        }
     }
 
-    private javax.jms.Topic unwrapDestinations(javax.jms.Topic topic) throws JMSException {
-         if (topic instanceof TopicProxy) {
-             return (javax.jms.Topic) 
-             ((DestinationAdapter) topic)._getPhysicalDestination();
-         } else {
-              return topic;
-         }
+    private javax.jms.Topic unwrapDestinations(javax.jms.Topic topic)
+        throws JMSException {
+        if (topic instanceof TopicProxy) {
+            return (javax.jms.Topic) ((DestinationAdapter) topic)._getPhysicalDestination();
+        } else {
+            return topic;
+        }
     }
-
 }
-

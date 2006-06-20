@@ -9,7 +9,7 @@
  *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  *
@@ -17,44 +17,44 @@
 package com.sun.genericra.outbound;
 
 import javax.jms.*;
+
 import javax.resource.spi.security.PasswordCredential;
+
 
 /**
  * ManagedConnectionFactory implementation for javax.jms.ConnectionFactory.
  * @author Sivakumar Thyagarajan
  */
-public class ManagedJMSConnectionFactory extends AbstractManagedConnectionFactory {
-
-    public ManagedJMSConnectionFactory(){
+public class ManagedJMSConnectionFactory
+    extends AbstractManagedConnectionFactory {
+    public ManagedJMSConnectionFactory() {
     }
 
     protected String getActualConnectionFactoryClassName() {
-        if (this.getSupportsXA()){
+        if (this.getSupportsXA()) {
             return this.getXAConnectionFactoryClassName();
         } else {
             return this.getConnectionFactoryClassName();
         }
     }
 
-    protected javax.jms.XAConnection createXAConnection(PasswordCredential pc, 
-                           javax.jms.ConnectionFactory cf ) throws JMSException {
+    protected javax.jms.XAConnection createXAConnection(PasswordCredential pc,
+        javax.jms.ConnectionFactory cf) throws JMSException {
         if (pc != null) {
-            return ((XAConnectionFactory)cf).createXAConnection(
-                           pc.getUserName(), new String(pc.getPassword()));
+            return ((XAConnectionFactory) cf).createXAConnection(pc.getUserName(),
+                new String(pc.getPassword()));
         } else {
-            return ((XAConnectionFactory)cf).createXAConnection();
-        }
-
-    }
-
-    protected javax.jms.Connection createConnection(PasswordCredential pc, 
-                    javax.jms.ConnectionFactory cf ) throws JMSException {
-        if (pc != null) {
-            return ((javax.jms.ConnectionFactory)cf).createConnection(
-                           pc.getUserName(), new String(pc.getPassword()));
-        } else {
-            return ((javax.jms.ConnectionFactory)cf).createConnection();
+            return ((XAConnectionFactory) cf).createXAConnection();
         }
     }
 
+    protected javax.jms.Connection createConnection(PasswordCredential pc,
+        javax.jms.ConnectionFactory cf) throws JMSException {
+        if (pc != null) {
+            return ((javax.jms.ConnectionFactory) cf).createConnection(pc.getUserName(),
+                new String(pc.getPassword()));
+        } else {
+            return ((javax.jms.ConnectionFactory) cf).createConnection();
+        }
+    }
 }

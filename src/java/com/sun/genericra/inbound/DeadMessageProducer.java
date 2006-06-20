@@ -9,58 +9,62 @@
  *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  *
  */
 package com.sun.genericra.inbound;
-import javax.jms.*;
-import java.util.logging.Logger;
-import java.util.logging.Level;
+
 import com.sun.genericra.util.*;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import javax.jms.*;
+
 
 /**
  * InternalMessageProducer implementation used by
- * Inbound code that send the messages to dead 
+ * Inbound code that send the messages to dead
  * message destination.
  *
- * The objective of this class is to handle 
+ * The objective of this class is to handle
  * any type of JMS destination
  *
  * @author Binod P.G
  */
 public class DeadMessageProducer {
+    private static Logger logger;
+
+    static {
+        logger = LogUtils.getLogger();
+    }
 
     private Session session;
     private String destinationType;
     private MessageProducer producer;
 
-    private static Logger logger;
-    static {
-        logger = LogUtils.getLogger();
-    }
-
-    public DeadMessageProducer(Connection con, InboundJmsResourcePool
-        pool, Destination dest) throws JMSException{
-        destinationType = pool.getConsumer().getSpec().
-                          getDeadMessageDestinationType();
-        logger.log(Level.FINE, "DeadMessageDestinationType is" + 
-                   " obtained for message sender : " + destinationType);
+    public DeadMessageProducer(Connection con, InboundJmsResourcePool pool,
+        Destination dest) throws JMSException {
+        destinationType = pool.getConsumer().getSpec()
+                              .getDeadMessageDestinationType();
+        logger.log(Level.FINE,
+            "DeadMessageDestinationType is" +
+            " obtained for message sender : " + destinationType);
         createSession(con);
         createProducer(dest);
     }
 
     private void createSession(Connection con) throws JMSException {
         if (destinationType.equals(Constants.QUEUE)) {
-            session = ((QueueConnection) con).createQueueSession(
-                       false, Session.AUTO_ACKNOWLEDGE);
+            session = ((QueueConnection) con).createQueueSession(false,
+                    Session.AUTO_ACKNOWLEDGE);
         } else if (destinationType.equals(Constants.TOPIC)) {
-            session = ((TopicConnection) con).createTopicSession(
-                       false, Session.AUTO_ACKNOWLEDGE);
+            session = ((TopicConnection) con).createTopicSession(false,
+                    Session.AUTO_ACKNOWLEDGE);
         } else {
-            session = con.createSession(
-                       false, Session.AUTO_ACKNOWLEDGE);
+            session = con.createSession(false, Session.AUTO_ACKNOWLEDGE);
         }
     }
 
@@ -96,6 +100,7 @@ public class DeadMessageProducer {
         } catch (Exception e) {
             logger.log(Level.FINE, e.getMessage(), e);
         }
+
         try {
             session.close();
         } catch (Exception e) {

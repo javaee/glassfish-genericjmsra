@@ -9,43 +9,46 @@
  *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  *
  */
 package com.sun.genericra.outbound;
 
+import com.sun.genericra.util.Constants;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+
 import javax.jms.ConnectionConsumer;
 import javax.jms.ConnectionMetaData;
 import javax.jms.Destination;
-import javax.jms.TemporaryQueue;
-import javax.jms.TemporaryTopic;
 import javax.jms.ExceptionListener;
-import javax.jms.JMSException;
 import javax.jms.IllegalStateException;
+import javax.jms.JMSException;
 import javax.jms.Queue;
 import javax.jms.QueueConnection;
 import javax.jms.QueueSession;
 import javax.jms.ServerSessionPool;
 import javax.jms.Session;
+import javax.jms.TemporaryQueue;
+import javax.jms.TemporaryTopic;
 import javax.jms.Topic;
 import javax.jms.TopicConnection;
 import javax.jms.TopicSession;
-import com.sun.genericra.util.Constants;
+
 
 /**
  * <code>ConnectionHandle<code> implementation for the generic JMS resource adapter
  * Implements the <code>Connection</code>, <code>TopicConnection</code>,
  * <code>QueueConnection</code> interfaces.
- * 
- * @author Sivakumar Thyagarajan 
+ *
+ * @author Sivakumar Thyagarajan
  */
 public class ConnectionHandle implements javax.jms.Connection, TopicConnection,
-                                                        QueueConnection {
+    QueueConnection {
     private ManagedConnection mc;
     private javax.jms.Connection physicalJMSCon;
     private boolean isClosed = false;
@@ -62,19 +65,20 @@ public class ConnectionHandle implements javax.jms.Connection, TopicConnection,
     }
 
     private boolean inACC() {
-        return ((AbstractManagedConnectionFactory) mc
-                        .getManagedConnectionFactory())
-                        .isInAppClientContainer();
+        return ((AbstractManagedConnectionFactory) mc.getManagedConnectionFactory()).isInAppClientContainer();
     }
 
     public void close() throws JMSException {
         if (isClosed()) {
             return;
         }
+
         this.physicalJMSCon.stop();
+
         synchronized (sessions) {
             Object[] sessionObjects = this.sessions.toArray();
-            for (int i=0; i < sessionObjects.length; i++) {
+
+            for (int i = 0; i < sessionObjects.length; i++) {
                 SessionAdapter sa = (SessionAdapter) sessionObjects[i];
                 sa.close();
             }
@@ -82,22 +86,25 @@ public class ConnectionHandle implements javax.jms.Connection, TopicConnection,
 
         synchronized (tempDestinations) {
             Object[] dests = this.tempDestinations.toArray();
-            for (int i=0; i < dests.length; i++) {
-                if (dests[i] instanceof TemporaryQueue ) {
+
+            for (int i = 0; i < dests.length; i++) {
+                if (dests[i] instanceof TemporaryQueue) {
                     ((TemporaryQueue) dests[i]).delete();
                 }
-                if (dests[i] instanceof TemporaryTopic ) {
+
+                if (dests[i] instanceof TemporaryTopic) {
                     ((TemporaryTopic) dests[i]).delete();
                 }
             }
         }
-        
+
         this.isClosed = true;
 
         this.mc.sendConnectionClosedEvent(this);
+
         if (!this.mc.isTransactionInProgress()) {
             this.mc.sendConnectionErrorEvent(this);
-        } 
+        }
     }
 
     public void start() throws JMSException {
@@ -106,63 +113,79 @@ public class ConnectionHandle implements javax.jms.Connection, TopicConnection,
     }
 
     public void stop() throws JMSException {
-        if (!inACC())
+        if (!inACC()) {
             throw new JMSException(
-                            "Conncetion.stop() cannot be called on non-ACC clients");
+                "Conncetion.stop() cannot be called on non-ACC clients");
+        }
+
         checkIfClosed();
         this.physicalJMSCon.stop();
     }
 
     public String getClientID() throws JMSException {
         checkIfClosed();
-        if (!inACC())
+
+        if (!inACC()) {
             throw new JMSException("Client ID cannot be set in non-ACC clients");
+        }
+
         return this.physicalJMSCon.getClientID();
     }
 
     public void setClientID(String clientID) throws JMSException {
         checkIfClosed();
-        if (!inACC())
+
+        if (!inACC()) {
             throw new JMSException("Client ID cannot be set in non-ACC clients");
+        }
+
         //can thsi be set multiple times? - apparently yes.
         this.physicalJMSCon.setClientID(clientID);
     }
 
     public ConnectionMetaData getMetaData() throws JMSException {
         checkIfClosed();
+
         return this.physicalJMSCon.getMetaData();
     }
 
     public ExceptionListener getExceptionListener() throws JMSException {
-        if (!this.inACC())
+        if (!this.inACC()) {
             throw new JMSException(
-                            "Conncetion.getExceptionListener() cannot be called on non-ACC clients");
+                "Conncetion.getExceptionListener() cannot be called on non-ACC clients");
+        }
+
         checkIfClosed();
+
         return this.physicalJMSCon.getExceptionListener();
     }
 
     public void setExceptionListener(ExceptionListener excptLstnr)
-                    throws JMSException {
-        if (!this.inACC())
+        throws JMSException {
+        if (!this.inACC()) {
             throw new JMSException(
-                            "Conncetion.setExceptionListener() cannot be called on non-ACC clients");
+                "Conncetion.setExceptionListener() cannot be called on non-ACC clients");
+        }
+
         checkIfClosed();
         this.physicalJMSCon.setExceptionListener(excptLstnr);
     }
 
     public Session createSession(boolean transacted, int acknowledgeMode)
-                    throws JMSException {
-        return (Session) createSession(transacted, acknowledgeMode, Constants.UNIFIED_SESSION);
+        throws JMSException {
+        return (Session) createSession(transacted, acknowledgeMode,
+            Constants.UNIFIED_SESSION);
     }
 
     private boolean checkIfSessionsCanBeCreated() throws JMSException {
         checkIfClosed();
+
         if (this.mc.isTransactionInProgress()) {
             if (this.mc.canSessionsBeCreated()) {
                 return true;
             } else {
-                throw new JMSException("More than one sessions cannot be "
-                                + "created within a transaction");
+                throw new JMSException("More than one sessions cannot be " +
+                    "created within a transaction");
             }
         } else {
             return true;
@@ -170,66 +193,74 @@ public class ConnectionHandle implements javax.jms.Connection, TopicConnection,
     }
 
     public ConnectionConsumer createConnectionConsumer(Destination dest,
-                    String msgSel, ServerSessionPool ssp, int maxMsgs)
-                    throws JMSException {
+        String msgSel, ServerSessionPool ssp, int maxMsgs)
+        throws JMSException {
         checkIfClosed();
+
         return this.physicalJMSCon.createConnectionConsumer(dest, msgSel, ssp,
-                        maxMsgs);
+            maxMsgs);
     }
 
     public ConnectionConsumer createDurableConnectionConsumer(Topic topic,
-                    String subName, String msgSel, ServerSessionPool ssp,
-                    int maxMsgs) throws JMSException {
+        String subName, String msgSel, ServerSessionPool ssp, int maxMsgs)
+        throws JMSException {
         checkIfClosed();
+
         return this.physicalJMSCon.createDurableConnectionConsumer(topic,
-                        subName, msgSel, ssp, maxMsgs);
+            subName, msgSel, ssp, maxMsgs);
     }
 
-    public TopicSession createTopicSession(boolean transacted, int acknowledgeMode)
-                    throws JMSException {
-        return (TopicSession) createSession(transacted, acknowledgeMode, Constants.TOPIC_SESSION);
+    public TopicSession createTopicSession(boolean transacted,
+        int acknowledgeMode) throws JMSException {
+        return (TopicSession) createSession(transacted, acknowledgeMode,
+            Constants.TOPIC_SESSION);
     }
 
-    private Session createSession(boolean transacted, 
-                   int acknowledgeMode, int type) throws JMSException {
+    private Session createSession(boolean transacted, int acknowledgeMode,
+        int type) throws JMSException {
         checkIfSessionsCanBeCreated();
 
-        Session s = this.mc.getPhysicalJMSSession(transacted, acknowledgeMode, type);
+        Session s = this.mc.getPhysicalJMSSession(transacted, acknowledgeMode,
+                type);
         SessionAdapter sa = new SessionAdapter(s, this);
         this.sessions.add(sa);
+
         return sa;
     }
 
     public ConnectionConsumer createConnectionConsumer(Topic topic,
-                    String subName, ServerSessionPool ssp, int maxMsgs)
-                    throws JMSException {
+        String subName, ServerSessionPool ssp, int maxMsgs)
+        throws JMSException {
         checkIfClosed();
+
         return this.physicalJMSCon.createConnectionConsumer(topic, subName,
-                        ssp, maxMsgs);
+            ssp, maxMsgs);
     }
 
     private boolean isXA() {
-        return ((AbstractManagedConnectionFactory) this.mc
-                        .getManagedConnectionFactory()).getSupportsXA();
+        return ((AbstractManagedConnectionFactory) this.mc.getManagedConnectionFactory()).getSupportsXA();
     }
 
-    public QueueSession createQueueSession(boolean transacted, int acknowledgeMode)
-                    throws JMSException {
-        return (QueueSession) createSession(transacted, acknowledgeMode, Constants.QUEUE_SESSION);
+    public QueueSession createQueueSession(boolean transacted,
+        int acknowledgeMode) throws JMSException {
+        return (QueueSession) createSession(transacted, acknowledgeMode,
+            Constants.QUEUE_SESSION);
     }
 
     public ConnectionConsumer createConnectionConsumer(Queue queue,
-                    String subName, ServerSessionPool ssp, int maxMsgs)
-                    throws JMSException {
+        String subName, ServerSessionPool ssp, int maxMsgs)
+        throws JMSException {
         checkIfClosed();
+
         return this.physicalJMSCon.createConnectionConsumer(queue, subName,
-                        ssp, maxMsgs);
+            ssp, maxMsgs);
     }
 
     public void cleanup() throws JMSException {
         //Iterate through Sessions and close them.
         Object[] sessionObjects = this.sessions.toArray();
-        for (int i=0; i < sessionObjects.length; i++) {
+
+        for (int i = 0; i < sessionObjects.length; i++) {
             SessionAdapter sa = (SessionAdapter) sessionObjects[i];
             sa.setInvalid();
         }
@@ -245,10 +276,13 @@ public class ConnectionHandle implements javax.jms.Connection, TopicConnection,
     }
 
     private void checkIfClosed() throws JMSException {
-        if (isClosed)
+        if (isClosed) {
             throw new IllegalStateException("Connection is closed");
-        if (!valid)
+        }
+
+        if (!valid) {
             throw new IllegalStateException("Invalid connection");
+        }
     }
 
     public boolean isClosed() {
@@ -267,7 +301,7 @@ public class ConnectionHandle implements javax.jms.Connection, TopicConnection,
         this.valid = false;
     }
 
-    void _addTemporaryDest ( Destination dest) {
+    void _addTemporaryDest(Destination dest) {
         tempDestinations.add(dest);
     }
- }
+}

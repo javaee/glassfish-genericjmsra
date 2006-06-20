@@ -9,22 +9,28 @@
  *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  *
  */
 package com.sun.genericra.inbound;
+
+import com.sun.genericra.GenericJMSRA;
+import com.sun.genericra.util.*;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import javax.jms.*;
+
 import javax.resource.ResourceException;
 import javax.resource.spi.*;
 import javax.resource.spi.endpoint.*;
 import javax.resource.spi.work.*;
-import javax.jms.*;
+
 import javax.transaction.xa.XAResource;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import com.sun.genericra.GenericJMSRA;
-import com.sun.genericra.util.*;
+
 
 /**
  * ServerSession implementation as per JMS 1.1 specification.
@@ -33,30 +39,28 @@ import com.sun.genericra.util.*;
  *
  * @author Binod P.G
  */
-public class InboundJmsResource  implements ServerSession {
-
-    private Session session;
-    private XAResource xaresource;
-    private MessageEndpoint endPoint;
-
-    private boolean free;
-
-    private GenericJMSRA ra;
-    private InboundJmsResourcePool pool;
-    private DeliveryHelper helper;
-
+public class InboundJmsResource implements ServerSession {
     private static Logger _logger;
+
     static {
         _logger = LogUtils.getLogger();
     }
 
-    public InboundJmsResource(Session session, InboundJmsResourcePool pool) 
-        throws JMSException{
+    private Session session;
+    private XAResource xaresource;
+    private MessageEndpoint endPoint;
+    private boolean free;
+    private GenericJMSRA ra;
+    private InboundJmsResourcePool pool;
+    private DeliveryHelper helper;
+
+    public InboundJmsResource(Session session, InboundJmsResourcePool pool)
+        throws JMSException {
         this(session, pool, null);
     }
 
     public InboundJmsResource(Session session, InboundJmsResourcePool pool,
-                              XAResource xaresource) throws JMSException{
+        XAResource xaresource) throws JMSException {
         this.session = session;
         this.xaresource = xaresource;
         this.pool = pool;
@@ -65,7 +69,9 @@ public class InboundJmsResource  implements ServerSession {
 
     public void start() throws JMSException {
         try {
-            _logger.log(Level.FINER, "Provider is starting the message consumtion" );
+            _logger.log(Level.FINER,
+                "Provider is starting the message consumtion");
+
             Work w = new WorkImpl(this);
             WorkManager wm = ra.getWorkManager();
             wm.scheduleWork(w);
@@ -82,6 +88,7 @@ public class InboundJmsResource  implements ServerSession {
         MessageListener listener = new MessageListener(this, pool);
         this.session.setMessageListener(listener);
         helper = new DeliveryHelper(this, pool);
+
         return this;
     }
 
@@ -95,6 +102,7 @@ public class InboundJmsResource  implements ServerSession {
                 }
             }
         }
+
         releaseEndpoint();
     }
 
@@ -104,11 +112,13 @@ public class InboundJmsResource  implements ServerSession {
 
     public InboundJmsResource markAsBusy() {
         this.free = false;
+
         return this;
     }
 
     public InboundJmsResource markAsFree() {
         this.free = true;
+
         return this;
     }
 
@@ -121,7 +131,9 @@ public class InboundJmsResource  implements ServerSession {
     }
 
     public Session getSession() {
-        _logger.log(Level.FINEST, "Message provider got the session :" + session);
+        _logger.log(Level.FINEST, "Message provider got the session :" +
+            session);
+
         return session;
     }
 
@@ -145,13 +157,17 @@ public class InboundJmsResource  implements ServerSession {
      * Creates the MessageEndpoint and start the delivery.
      */
     public void refresh() throws JMSException {
-        MessageEndpointFactory mef = pool.getConsumer().getMessageEndpointFactory();
+        MessageEndpointFactory mef = pool.getConsumer()
+                                         .getMessageEndpointFactory();
+
         try {
-            _logger.log(Level.FINER, "Creating message endpoint : " + xaresource);
+            _logger.log(Level.FINER, "Creating message endpoint : " +
+                xaresource);
             endPoint = mef.createEndpoint(helper.getXAResource());
             endPoint.beforeDelivery(this.ra.getListeningMethod());
             _logger.log(Level.FINE, "Binod.IN: Created endpoint : ");
         } catch (Exception e) {
+            _logger.log(Level.SEVERE, "Refresh resource failed");
             // TODO. Should we eat this exception?
             //throw ExceptionUtils.newJMSException(e);
         }
@@ -165,12 +181,19 @@ public class InboundJmsResource  implements ServerSession {
             if (this.endPoint != null) {
                 this.endPoint.afterDelivery();
             }
-        } catch (ResourceException re) {
-            _logger.log(Level.WARNING, ""+ re.getMessage(), re);
+        } catch (Exception re) {
+            _logger.log(Level.SEVERE, "After delivery failed " + re.getMessage(), re);
         } finally {
             if (this.endPoint != null) {
-                this.endPoint.release();
-                _logger.log(Level.FINE, "Binod.OUT: released endpoint : ");
+                try {
+                    this.endPoint.release ();
+                    _logger.log(Level.FINE, "InboundJMSResource: released endpoint : ");
+                } catch (Exception e) {
+                    _logger.log(Level.SEVERE,
+                        "InboundJMSResource: release endpoint failed ");
+                    ;
+                }
+
                 this.endPoint = null;
             }
         }

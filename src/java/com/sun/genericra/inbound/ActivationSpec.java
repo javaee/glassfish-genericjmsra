@@ -9,27 +9,36 @@
  *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  *
  */
 package com.sun.genericra.inbound;
-import javax.resource.ResourceException;
-import javax.resource.spi.*;
-import java.util.logging.*;
+
 import com.sun.genericra.GenericJMSRA;
 import com.sun.genericra.GenericJMSRAProperties;
 import com.sun.genericra.util.*;
+
+import java.util.logging.*;
+
+import javax.resource.ResourceException;
+import javax.resource.spi.*;
+
 
 /**
  * ActivationSpec for javax.jms.MessageListener.
  *
  * @author Binod P.G
  */
-public class ActivationSpec extends GenericJMSRAProperties 
-                    implements javax.resource.spi.ActivationSpec{
-    
+public class ActivationSpec extends GenericJMSRAProperties
+    implements javax.resource.spi.ActivationSpec {
+    private static Logger logger;
+
+    static {
+        logger = LogUtils.getLogger();
+    }
+
     private String cfJndiName;
     private String cfProperties;
     private String destJndiName;
@@ -46,21 +55,14 @@ public class ActivationSpec extends GenericJMSRAProperties
     private int reconnectInterval;
     private int maxPoolSize = 8;
     private int maxWaitTime = 3;
-
     private boolean isDmd = false;
-    private String dmClassName; 
-    private String dmJndiName; 
-    private String dmCfJndiName; 
-    private String dmProperties; 
-    private String dmCfProperties; 
-
-    private static Logger logger;
-    static {
-        logger = LogUtils.getLogger();
-    }
-
-    private StringManager sm = StringManager.getManager(
-        GenericJMSRA.class );
+    private String dmClassName;
+    private String dmJndiName;
+    private String dmCfJndiName;
+    private String dmProperties;
+    private String dmCfProperties;
+    private int endpointReleaseTimeout = 180;
+    private StringManager sm = StringManager.getManager(GenericJMSRA.class);
 
     public void setMaxWaitTime(int waitTime) {
         this.maxWaitTime = waitTime;
@@ -225,9 +227,18 @@ public class ActivationSpec extends GenericJMSRAProperties
     public void setDeadMessageDestinationType(String dmType) {
         this.dmType = dmType;
     }
-          
-    public void validate() throws InvalidPropertyException{
-        logger.log(Level.FINE, ""+ this);
+
+    public void setEndpointReleaseTimeout(int secs) {
+        this.endpointReleaseTimeout = secs;
+    }
+
+    public int getEndpointReleaseTimeout() {
+        return this.endpointReleaseTimeout;
+    }
+
+    public void validate() throws InvalidPropertyException {
+        logger.log(Level.FINE, "" + this);
+
         //XXX: perform CF, XAQCF, XATCF validation!
         if (getMaxPoolSize() <= 0) {
             String msg = sm.getString("maxpoolsize_iszero");
@@ -249,16 +260,21 @@ public class ActivationSpec extends GenericJMSRAProperties
             throw new InvalidPropertyException(msg);
         }
 
+        if (getEndpointReleaseTimeout() < 0) {
+            String msg = sm.getString("endpointreleasetimeout_lessthan_zero");
+            throw new InvalidPropertyException(msg);
+        }
+
         if (getSendBadMessagesToDMD()) {
             if (getProviderIntegrationMode().equalsIgnoreCase(Constants.JNDI_BASED)) {
-                if (StringUtils.isNull(getDeadMessageDestinationJndiName())){
-                   String msg = sm.getString("dmd_jndi_null");
-                   throw new InvalidPropertyException(msg);
+                if (StringUtils.isNull(getDeadMessageDestinationJndiName())) {
+                    String msg = sm.getString("dmd_jndi_null");
+                    throw new InvalidPropertyException(msg);
                 }
             } else {
-                if (StringUtils.isNull(getDeadMessageDestinationProperties())){
-                   String msg = sm.getString("dmd_props_null");
-                   throw new InvalidPropertyException(msg);
+                if (StringUtils.isNull(getDeadMessageDestinationProperties())) {
+                    String msg = sm.getString("dmd_props_null");
+                    throw new InvalidPropertyException(msg);
                 }
             }
         }
@@ -270,28 +286,39 @@ public class ActivationSpec extends GenericJMSRAProperties
         s = s + "{RedeliveryAttempts = " + getRedeliveryAttempts() + "},";
         s = s + "{ClientID = " + getClientID() + "},";
         s = s + "{MessageSelector = " + getMessageSelector() + "},";
-        s = s + "{SubscriptionDurability = " + getSubscriptionDurability() + "},";
-        s = s + "{ConnectionFactoryJNDIName = " + getConnectionFactoryJndiName() + "},";
+        s = s + "{SubscriptionDurability = " + getSubscriptionDurability() +
+            "},";
+        s = s + "{ConnectionFactoryJNDIName = " +
+            getConnectionFactoryJndiName() + "},";
         s = s + "{SubscriptionName = " + getSubscriptionName() + "},";
         s = s + "{DestinationJNDIName = " + getDestinationJndiName() + "},";
         s = s + "{DestinationType = " + getDestinationType() + "},";
-        s = s + "{DeadMessageDestinationType = " + getDeadMessageDestinationType() + "},";
+        s = s + "{DeadMessageDestinationType = " +
+            getDeadMessageDestinationType() + "},";
         s = s + "{MaxPoolSize = " + getMaxPoolSize() + "},";
-        s = s + "{DestinationProperties = " + getDestinationProperties() + "},";
-        s = s + "{DeadMessageDestinationJndiName = " + getDeadMessageDestinationJndiName() + "},";
-        s = s + "{DeadMessageConnectionFactoryJndiName = " + getDeadMessageConnectionFactoryJndiName() + "},";
-        s = s + "{DeadMessageConnectionFactoryProperties = " + getDeadMessageConnectionFactoryProperties() + "},";
-        s = s + "{DeadMessageDestinationClassName = " + getDeadMessageDestinationClassName() + "},";
-        s = s + "{DeadMessageDestinationProperties = " + getDeadMessageDestinationProperties() + "},";
+        s = s + "{DestinationProperties = " + getDestinationProperties() +
+            "},";
+        s = s + "{DeadMessageDestinationJndiName = " +
+            getDeadMessageDestinationJndiName() + "},";
+        s = s + "{DeadMessageConnectionFactoryJndiName = " +
+            getDeadMessageConnectionFactoryJndiName() + "},";
+        s = s + "{DeadMessageConnectionFactoryProperties = " +
+            getDeadMessageConnectionFactoryProperties() + "},";
+        s = s + "{DeadMessageDestinationClassName = " +
+            getDeadMessageDestinationClassName() + "},";
+        s = s + "{DeadMessageDestinationProperties = " +
+            getDeadMessageDestinationProperties() + "},";
         s = s + "{SendBadMessagesToDMD = " + getSendBadMessagesToDMD() + "},";
+        s = s + "{EndpointReleaseTimeOut = " + getEndpointReleaseTimeout() +
+            "},";
+
         return s;
     }
-
 
     public String getDestinationType() {
         return destinationType;
     }
-    
+
     public void setDestinationType(String destinationType) {
         this.destinationType = destinationType;
     }
