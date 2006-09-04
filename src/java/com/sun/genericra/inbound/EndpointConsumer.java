@@ -152,7 +152,8 @@ public class EndpointConsumer  {
                 con.setExceptionListener(reconHelper);
             }
         } catch (JMSException je) {
-            stop();
+            // stop();
+		closeConsumer();
             throw ExceptionUtils.newResourceException(je);
         } 
         logger.log(Level.INFO, "Generic resource adapter started consumption ");

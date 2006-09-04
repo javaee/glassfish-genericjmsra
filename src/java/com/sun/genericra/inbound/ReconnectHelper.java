@@ -59,23 +59,33 @@ public class ReconnectHelper implements ExceptionListener {
         _logger.log(Level.INFO, "Reconnecting now");
         _logger.log(Level.INFO, "Reconnecting now");
         _logger.log(Level.INFO, "Reconnecting now");
-        try {
-            if (reestablishPool()) {
-                this.consumer.closeConsumer();
-                this.consumer.restart();
+        if (reestablishPool()) {
+                // this.consumer.closeConsumer();
+                // this.consumer.restart();
                 _logger.log(Level.INFO, "Reconnected!!");
                 // TO DO i18n
-            } else {
-                _logger.log(Level.SEVERE, "Reconnect failed in pool!!");
-                // TO DO i18n 
-            }
-        } catch (ResourceException re) {
-                _logger.log(Level.SEVERE, "Reconnect failed!!");
-                re.printStackTrace();
-                this.consumer.stop();
+        } else {
+              _logger.log(Level.SEVERE, "Reconnect failed in pool!!");
+              // TO DO i18n 
         }
     } 
 
+    private void createConsumer() throws ResourceException {
+	try {
+                this.consumer.closeConsumer();
+                this.consumer.restart();
+	} catch (ResourceException re) {
+		_logger.log(Level.INFO,"Reconnection failed, Cannot create consumer");
+		try {
+			this.pool.stop();
+			// this.consumer.stop();
+		}catch (Exception e) {
+            		_logger.log(Level.SEVERE, "Reconnect failed while stopping pool");	
+		}
+		_logger.log(Level.INFO,"Stopping the consumer");
+		throw re;
+	}
+    }
     /**
      * Pause all waiting threads. recreate the serversession pool.
      */
@@ -95,11 +105,13 @@ public class ReconnectHelper implements ExceptionListener {
             try {
                 this.pool.initialize();
                 this.pool.releaseAllWaitingThreads();
+		createConsumer();
                 _logger.log(Level.INFO, "Reconnect successful with pool->" + i);
                 result = true;
                 break;
             } catch (ResourceException re) {
                 _logger.log(Level.INFO, "Reconnect attempt failed. Now sleeping for" + interval);
+		
                 // TODO. log a message.
                 try {
                     Thread.sleep(interval);
