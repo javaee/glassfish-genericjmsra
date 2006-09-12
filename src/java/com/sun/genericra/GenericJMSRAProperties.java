@@ -154,7 +154,9 @@ public class GenericJMSRAProperties implements ResourceAdapterAssociation,
      *  This instance.
      */
     private GenericJMSRAProperties raprops;
-
+    
+    private boolean enableMonitoring = false;
+    
     /**
      * Sets the connection factory class name.
      *
@@ -612,8 +614,16 @@ public class GenericJMSRAProperties implements ResourceAdapterAssociation,
             "setXATopicConnectionFactoryClassname " +
             topicConnectionFactoryClassName);
         xATopicConnectionFactoryClassName = topicConnectionFactoryClassName;
+    } 
+    
+    public void setMonitoring(boolean monitor) {
+        enableMonitoring = monitor;
     }
-
+    
+    public boolean getMonitoring() {
+        return enableMonitoring;
+    }
+    
     /**
      * Overides the equals method of object.
      *

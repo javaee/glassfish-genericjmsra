@@ -87,7 +87,7 @@ public class InboundJmsResource implements ServerSession {
     public InboundJmsResource refreshListener() throws JMSException {
         MessageListener listener = new MessageListener(this, pool);
         this.session.setMessageListener(listener);
-        helper = new DeliveryHelper(this, pool);
+          helper = new DeliveryHelper(this, pool);
 
         return this;
     }
@@ -165,7 +165,7 @@ public class InboundJmsResource implements ServerSession {
                 xaresource);
             endPoint = mef.createEndpoint(helper.getXAResource());
             endPoint.beforeDelivery(this.ra.getListeningMethod());
-            _logger.log(Level.FINE, "Binod.IN: Created endpoint : ");
+            _logger.log(Level.FINE, "Created endpoint : ");
         } catch (Exception e) {
             _logger.log(Level.SEVERE, "Refresh resource failed");
             // TODO. Should we eat this exception?

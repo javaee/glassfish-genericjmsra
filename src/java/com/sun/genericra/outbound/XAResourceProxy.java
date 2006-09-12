@@ -71,10 +71,13 @@ public class XAResourceProxy extends AbstractXAResourceType {
      *            protocol to commit the work done on behalf of xid.
      */
     public void commit(Xid xid, boolean onePhase) throws XAException {
-        debug(xid + "COmmitting tx...");
+       
+        
+        debugxid("Comitting outbound transaction with ID ", xid);
 
         try {
             _getXAResource().commit(xid, onePhase);
+            debugxid("Comitted outbound transaction with ID ", xid);
         } finally {
             try {
                 mc._endXaTx();
@@ -94,8 +97,10 @@ public class XAResourceProxy extends AbstractXAResourceType {
      *            One of TMSUCCESS, TMFAIL, or TMSUSPEND
      */
     public void end(Xid xid, int flags) throws XAException {
-        debug(xid + "Ending tx..." + convertFlag(flags));
-        _getXAResource().end(xid, flags);
+        debug("Ending tx..." + convertFlag(flags));
+        debugxid("Ending outbound transaction with ID ", xid);        
+        _getXAResource().end(xid, flags);       
+        debugxid("Ended outbound transaction with ID ", xid);
 
         //mc.transactionCompleted();
     }
@@ -133,7 +138,6 @@ public class XAResourceProxy extends AbstractXAResourceType {
      */
     public boolean isSameRM(XAResource xares) throws XAException {
         XAResource inxa = xares;
-
         if (xares instanceof XAResourceType) {
             XAResourceType wrapper = (XAResourceType) xares;
             inxa = (XAResource) wrapper.getWrappedObject();
@@ -164,8 +168,7 @@ public class XAResourceProxy extends AbstractXAResourceType {
      *         in the prepare method.
      */
     public int prepare(Xid xid) throws XAException {
-        debug(xid + "Preparing tx...");
-
+        debugxid("Preparing transaction with ID ", xid);
         return _getXAResource().prepare(xid);
     }
 
@@ -192,11 +195,11 @@ public class XAResourceProxy extends AbstractXAResourceType {
      * @param xid
      *            A global transaction identifier
      */
-    public void rollback(Xid xid) throws XAException {
-        debug(xid + "Rolling back tx...");
-
+    public void rollback(Xid xid) throws XAException {        
+        debugxid("Rolling back transaction with ID ", xid);        
         try {
             _getXAResource().rollback(xid);
+            debugxid("Rolled back transaction with ID ", xid);        
         } finally {
             try {
                 mc._endXaTx();
@@ -227,17 +230,19 @@ public class XAResourceProxy extends AbstractXAResourceType {
      *            resource
      * @return flags One of TMNOFLAGS, TMJOIN, or TMRESUME
      */
-    public void start(Xid xid, int flags) throws XAException {
+    public void start(Xid xid, int flags) throws XAException {        
+        debug("Starting tx..." + convertFlag(flags));
+        debugxid("Starting outbound transaction with ID ", xid);
         try {
+            
             mc._startXaTx();
         } catch (Exception e) {
             XAException xae = new XAException();
             xae.initCause(e);
             throw xae;
-        }
-
-        debug(xid + "Starting tx..." + convertFlag(flags));
-        _getXAResource().start(xid, flags);
+        }       
+        _getXAResource().start(xid, flags);        
+        debugxid("Started outbound transaction with ID ", xid);
     }
 
     private XAResource _getXAResource() throws XAException {
@@ -283,5 +288,11 @@ public class XAResourceProxy extends AbstractXAResourceType {
     void debug(String s) {
         logger.log(Level.FINEST,
             "Managed Connection = " + mc + " XAResourceProxy" + s);
+    }
+    
+    void debugxid(String s, Xid xid) {
+        if (logger.getLevel() == Level.FINEST) {
+            logger.log(Level.FINEST, s + printXid(xid));
+        }
     }
 }

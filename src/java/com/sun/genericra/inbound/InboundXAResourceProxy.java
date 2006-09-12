@@ -66,19 +66,16 @@ public class InboundXAResourceProxy extends AbstractXAResourceType {
      */
     public void commit(Xid xid, boolean onePhase) throws XAException {
         
-        debug("COMMIT , Xid got is " +
-            printXid(xid));
+        debugxid("Commiting inbound transaction with ID ", xid);
              
         if (xid != null)
         {
-            debug("COMMITTED is " +
-            printXid(xid));
+            debugxid("Committed inbound transaction with ID ", xid);
             xar.commit(xid, onePhase);
         }
         else
         {            
-            debug("COMMITTED is " +
-            printXid(startXid));
+            debugxid("Committed inbound transaction with ID " , startXid);
             xar.commit(startXid, onePhase);   
         }
     }
@@ -93,7 +90,7 @@ public class InboundXAResourceProxy extends AbstractXAResourceType {
      *            One of TMSUCCESS, TMFAIL, or TMSUSPEND
      */
     public void end(Xid xid, int flags) throws XAException {
-        debug("END , Xid got is " + printXid(xid));
+        debugxid("Ending inbound transaction with ID ", xid);
         
         if (xid == null)
         {
@@ -107,7 +104,7 @@ public class InboundXAResourceProxy extends AbstractXAResourceType {
              * that was actually started.
              *
              */
-            debug("ENDED is " + printXid(xid));
+            debugxid("Ended inbound transaction with ID ", xid);
             endCalled = true; 
             xar.end(xid, flags);
         }
@@ -217,18 +214,15 @@ public class InboundXAResourceProxy extends AbstractXAResourceType {
      *         in the prepare method.
      */
     public int prepare(Xid xid) throws XAException {
-        debug("PREPARED got is " +
-            printXid(xid));
+        debugxid("Preparing inbound transaction with ID ", xid);
         if (xid == null)
         {
-            debug("PREPARED is " +
-            printXid(startXid));
+            debugxid("Prepared inbound transactionw with ID ", startXid);
             return xar.prepare(startXid);
         }
         else
         {
-            debug("PREPARED is " +
-            printXid(xid));
+            debugxid("Prepared inbound transactionw with ID ", xid);
             return xar.prepare(xid);
         }
     }
@@ -257,16 +251,14 @@ public class InboundXAResourceProxy extends AbstractXAResourceType {
      *            A global transaction identifier
      */
     public void rollback(Xid xid) throws XAException {
-        debug("ROLLEDBACK , Xid got is " +
-            printXid(xid));
+        debugxid("Rolling back inbound transaction with ID ", xid);
 
 
         //rolledback = true;
 
         if (toRollback) {
-            debug("ROLLEDBACK , Xid  is " +
-            printXid(xid));
-            xar.rollback(xid);
+            xar.rollback(xid);            
+            debugxid("Rolled back transaction with ID ", xid);
         }
     }
 
@@ -296,8 +288,7 @@ public class InboundXAResourceProxy extends AbstractXAResourceType {
 
         if (startedDelayedXA)
         {
-            debug("START startDelayedXA =true, Xid started is " +
-            printXid(startXid));
+            debugxid("Delayed start of inbound transaction with ID ", startXid);
             xar.start(xid, flags);            
         }
         else
@@ -305,9 +296,7 @@ public class InboundXAResourceProxy extends AbstractXAResourceType {
             startXid = xid;
             if (flags != xar.TMRESUME){
                 startflags = flags;
-            }
-            debug("START startDelayed=false, Xid got is " +
-            printXid(xid));
+            }            
         }
         
 
@@ -372,7 +361,7 @@ public class InboundXAResourceProxy extends AbstractXAResourceType {
          */
         try
         {
-            debug("Delayed start of XID " + printXid(startXid));
+            debugxid("Delayed start of inboudn transaction (in startDelated) ",startXid);
             xar.start(startXid, startflags);            
         }
         catch (XAException xae)
@@ -391,50 +380,11 @@ public class InboundXAResourceProxy extends AbstractXAResourceType {
     void debug(String s) {
         logger.log(Level.FINEST, "InboundXAResourceProxy : " + s);
     }    
-    /**
-     * The following is a method that has been added to aid printing of XID.
-     * This method of printing the XID may differ for different providers.
-     */
-    private String printXid(Xid xid) {
-        if (xid != null) {
-            return xid.toString();
+    
+    void debugxid(String s, Xid xid) {
+        if (logger.getLevel() == Level.FINEST) {
+            logger.log(Level.FINEST, s + printXid(xid));
         }
-        else {
-            return "null";
-        }
-        
-    /* The following code can be enabled for TM implementations 
-     * that do not have a toString implementation for xids
-     */
-        /*
-        String hextab = "0123456789ABCDEF";
-        StringBuffer data = new StringBuffer(256);
-        int i;
-        int value;
-
-        if (xid == null) {
-            return "null";
-        }
-
-        if (xid.getFormatId() == -1) {
-            return "-1";
-        }
-
-        // Add branch qualifier. Convert data string to hex
-        for (i = 0; i < xid.getBranchQualifier().length; i++) {
-            value = xid.getBranchQualifier()[i] & 0xff;
-            data.append(hextab.charAt(value / 16));
-            data.append(hextab.charAt(value & 15));
-        }
-
-        // Add global transaction id
-        for (i = 0; i < xid.getGlobalTransactionId().length; i++) {
-            value = xid.getGlobalTransactionId()[i] & 0xff;
-            data.append(hextab.charAt(value / 16));
-            data.append(hextab.charAt(value & 15));
-        }
-
-        return new String(data);
-         */
     }
+
 }

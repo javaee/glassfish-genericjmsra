@@ -31,7 +31,9 @@ import javax.resource.spi.work.WorkManager;
 
 import javax.transaction.xa.XAResource;
 
-
+import com.sun.genericra.GenericJMSRA;
+import com.sun.genericra.util.*;
+import com.sun.genericra.monitoring.*;
 /**
  * One <code>EndpointConsumer</code> represents one MDB deployment.
  * Important assumptions:
@@ -84,6 +86,8 @@ public class EndpointConsumer {
     public Object getConnectionFactory() {
         return cf;
     }
+    
+  
 
     public MessageEndpointFactory getMessageEndpointFactory() {
         return mef;
@@ -129,21 +133,60 @@ public class EndpointConsumer {
         jmsPool.initialize();
     }
 
-    private ConnectionConsumer _start(InboundJmsResourcePool pool,
-        Destination dst) throws ResourceException {
+    public InboundJmsResourcePool getPool() {
+        return this.jmsPool;
+    }
+
+    private ConnectionConsumer _start(InboundJmsResourcePool pool, 
+                               Destination dst) throws ResourceException {
         ConnectionConsumer consmr = null;
         logger.log(Level.FINE, "Starting the message consumption");
 
         try {
-            Connection con = pool.getConnection();
-
+            Connection con = pool.getConnection();    
+            /*
+             * Code for tackling the client id uniqueness requirement
+             * for durable subscriptions
+            */ 
             if (spec.getClientID() != null) {
+                if ((!spec.getShareClientid()) && (spec.getInstanceCount() > 1))
+                {           
+                    try{          
+                        String clientid = null;
+                        if (spec.getInstanceClientId() != null) {
+                            clientid = spec.getInstanceClientId();
+                        }
+                        else {
+                            clientid = (spec.getInstanceID() == 0) ? 
+                                    spec.getClientID() : ((spec.getClientID().substring(0, 
+                                        (spec.getClientID().length()-1)))
+                                            + spec.getInstanceID());
+                        }
+                        con.setClientID(clientid);                    
+                        logger.log(Level.INFO, "Setting the clientID to : " + clientid);              
+                    }
+                    catch (Exception ce) {                     
+                        logger.log(Level.SEVERE, "Failed to generate clientID to : " + ce.getMessage());                               
+                    }              
+                }
+                else {                    
+                    con.setClientID(spec.getClientID());
+                    logger.log(Level.INFO, "Setting the clientID to : " + spec.getClientID());                
+                }
+                
                 logger.log(Level.FINE,
                     "Setting the clientID to : " + spec.getClientID());
                 con.setClientID(spec.getClientID());
             }
 
             if (spec.getSubscriptionDurability().equals(Constants.DURABLE)) {
+                    String subscription_name = 
+                            ((spec.getInstanceCount() > 1) && (spec.getInstanceID() != 0)) ?
+                            (spec.getSubscriptionName() + spec.getInstanceID()) :
+                            (spec.getSubscriptionName());
+                    consmr = pool.createDurableConnectionConsumer(                
+                    dst, subscription_name, spec.getMessageSelector(),1 );
+                    logger.log(Level.FINE, "Created durable connection consumer" + dst);               
                 consmr = con.createDurableConnectionConsumer((javax.jms.Topic) dst,
                         spec.getSubscriptionName(), spec.getMessageSelector(),
                         pool, 1);

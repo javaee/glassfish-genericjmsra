@@ -62,6 +62,19 @@ public class ActivationSpec extends GenericJMSRAProperties
     private String dmProperties;
     private String dmCfProperties;
     private int endpointReleaseTimeout = 180;
+    private boolean shareclientid = false;
+    /* START of properties for Load balancing topics */
+    private int instanceCount = 1;
+    private boolean loadBalance = true;    
+    private String mCurrentInstance = "0";
+    private int mCurrentInstanceNo = 0;
+    private String mMessageSelector = "";
+    private String mInstanceClientId = null;
+    private static String SELECTOR_PROPERTY = "com.sun.genericra.loadbalancing.selector";    
+    private static String INSTANCENO_PROPERTY = "com.sun.genericra.loadbalancing.instance.id";    
+    private static String INSTANCE_CLIENTID_PROPERTY = "com.sun.genericra.loadbalancing.instance.clientid";
+    /* END of properties for load balancing */
+    
     private StringManager sm = StringManager.getManager(GenericJMSRA.class);
 
     public void setMaxWaitTime(int waitTime) {
@@ -82,12 +95,75 @@ public class ActivationSpec extends GenericJMSRAProperties
 
     public void setRedeliveryAttempts(int attempts) {
         this.redeliveryAttempts = attempts;
-    }
-
+    }    
+    
     public int getRedeliveryAttempts() {
         return this.redeliveryAttempts;
     }
-
+    
+/* Following methods have been added for implementing topic lo
+ * balancing.
+ * BEGIN
+ */
+    public void setInstanceCount(int instancecount) {
+        this.instanceCount = instancecount;
+    }    
+    
+    public int getInstanceCount() {
+        return this.instanceCount;
+    }
+    
+    public void setLoadBalancingRequired(boolean loadbalance) {
+        this.loadBalance = loadbalance;
+    }    
+    
+    public boolean getLoadBalancingRequired() {
+        return this.loadBalance;
+    }
+    
+    /* Instace Id and load balancing selector cannot be configured through
+     * the activation spec, but they are here because these seemes a logical place
+     * to put them.
+     * These have to be configured as jvm properties and can be unique for
+     * different instances in a cluster
+     */
+    
+    public int getInstanceID() {
+        try {
+            mCurrentInstance = System.getProperty(INSTANCENO_PROPERTY, "0");
+            mCurrentInstanceNo = Integer.parseInt(mCurrentInstance.trim());
+        } catch (Exception e)
+        {
+            // e.printStackTrace();
+            mCurrentInstanceNo = 0;
+        }  
+        return this.mCurrentInstanceNo;
+    }
+    
+    public String getInstanceClientId() {
+        try {
+            mInstanceClientId = System.getProperty(INSTANCE_CLIENTID_PROPERTY);
+        }
+        catch (Exception e) {
+            ;
+        }
+        return mInstanceClientId;
+    }        
+    
+    public String getLoadBalancingSelector()
+    {
+        try {
+            mMessageSelector = System.getProperty(SELECTOR_PROPERTY, "");        
+        } catch (Exception e)
+        {
+            e.printStackTrace();
+            mMessageSelector = "";
+        }      
+        return this.mMessageSelector;
+    }
+    
+    /* END
+     */
     public void setReconnectInterval(int interval) {
         this.reconnectInterval = interval;
     }
@@ -235,7 +311,15 @@ public class ActivationSpec extends GenericJMSRAProperties
     public int getEndpointReleaseTimeout() {
         return this.endpointReleaseTimeout;
     }
-
+    
+    public boolean getShareClientid() {
+        return this.shareclientid;
+    }
+    
+    public void setShareClientid(boolean genclientid){
+        this.shareclientid = genclientid;
+    }    
+    
     public void validate() throws InvalidPropertyException {
         logger.log(Level.FINE, "" + this);
 
@@ -265,7 +349,19 @@ public class ActivationSpec extends GenericJMSRAProperties
             throw new InvalidPropertyException(msg);
         }
 
-        if (getSendBadMessagesToDMD()) {
+        if (getInstanceCount() < 1)
+        {
+         String msg = sm.getString("instancecount_lessthan_zero");
+            throw new InvalidPropertyException(msg);           
+        }
+        
+        if ((getInstanceID() < 0) || (getInstanceID() >= getInstanceCount()))
+        {            
+            String msg = sm.getString("instanceid_should_be_between_0_and_instancecount");
+            throw new InvalidPropertyException(msg);              
+        }
+        
+            if (getSendBadMessagesToDMD()) {
             if (getProviderIntegrationMode().equalsIgnoreCase(Constants.JNDI_BASED)) {
                 if (StringUtils.isNull(getDeadMessageDestinationJndiName())) {
                     String msg = sm.getString("dmd_jndi_null");
@@ -311,7 +407,12 @@ public class ActivationSpec extends GenericJMSRAProperties
         s = s + "{SendBadMessagesToDMD = " + getSendBadMessagesToDMD() + "},";
         s = s + "{EndpointReleaseTimeOut = " + getEndpointReleaseTimeout() +
             "},";
-
+        s = s + "{InstanceCount = " + getInstanceCount() + "},";
+        s = s + "{LoadBalancingRequired = " + getLoadBalancingRequired() + "},";
+        s = s + "{Instance ID = " + getInstanceID() + "},";
+        s = s + "{CustomLoadBalancingMessageSelector = " + getLoadBalancingSelector() + "},";
+        s = s + "{ShareClientID = " + getShareClientid() + "}";
+ 
         return s;
     }
 
@@ -321,5 +422,26 @@ public class ActivationSpec extends GenericJMSRAProperties
 
     public void setDestinationType(String destinationType) {
         this.destinationType = destinationType;
+    }
+
+    /**
+     * Holds value of property applicationName.
+     */
+    private String applicationName;
+
+    /**
+     * Getter for property applicationName.
+     * @return Value of property applicationName.
+     */
+    public String getApplicationName() {
+        return this.applicationName;
+    }
+
+    /**
+     * Setter for property applicationName.
+     * @param applicationName New value of property applicationName.
+     */
+    public void setApplicationName(String applicationName) {
+        this.applicationName = applicationName;
     }
 }

@@ -39,7 +39,11 @@ import javax.resource.spi.endpoint.MessageEndpointFactory;
 import javax.resource.spi.work.WorkManager;
 
 import javax.transaction.xa.XAResource;
-
+import javax.management.MBeanServerFactory;
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
+import com.sun.genericra.monitoring.*;
+import javax.management.StandardMBean;
 
 /**
  * Resource Adapter javabean implementation for JMS resource adapter.
@@ -92,6 +96,13 @@ public class GenericJMSRA extends GenericJMSRAProperties
      */
     private transient ObjectBuilderFactory obf = null;
     
+    private transient MBeanServer mbeanserver = null;
+    
+    private transient ObjectName monitoringbean = null;
+    
+    private transient ResourceMonitor monitor = null;
+    private transient ObjectName configbean = null;
+    
     /**
      * Default log level for logging in genric JMS RA.
      */
@@ -115,6 +126,9 @@ public class GenericJMSRA extends GenericJMSRAProperties
     public void stop() {
         obf = null;
         onMessageMethod = null;
+        if (getMonitoring()) {
+            unregisterMonitoringMBean();
+        }
     }
     
     /** 
@@ -130,13 +144,60 @@ public class GenericJMSRA extends GenericJMSRAProperties
         this.obf = new ObjectBuilderFactory();
         this.consumers = new Hashtable();
         this.context = context;
-
+        if (getMonitoring()) {  
+            registerMonitoringMBean();
+        }
+        
         try {
             Class msgListenerClass = javax.jms.MessageListener.class;
             Class[] paramTypes = { javax.jms.Message.class };
             onMessageMethod = msgListenerClass.getMethod("onMessage", paramTypes);
         } catch (NoSuchMethodException ex) {
             throw ExceptionUtils.newResourceAdapterInternalException(ex);
+        }
+    }
+    
+    private void registerMonitoringMBean() {        
+        try{                        
+                mbeanserver = (MBeanServer) MBeanServerFactory.findMBeanServer(null).get(0);
+                if (mbeanserver == null)
+                {
+                    logger.log(Level.SEVERE, "Cannot get MBean server, monitoring is disabled");
+                    return;
+                }                
+                monitor = new ResourceMonitor();                
+                StandardMBean mbean = new StandardMBean(monitor, ResourceMonitorMBean.class);
+                monitoringbean = new ObjectName("com.sun.genericra:name=Monitoring,category=InboundResources");    
+                if (mbeanserver.isRegistered(monitoringbean)) {
+                    mbeanserver.unregisterMBean(monitoringbean);
+                }
+                mbeanserver.registerMBean(mbean, monitoringbean);                    
+                logger.log(Level.INFO, "Registered monitoring MBean with name " + monitoringbean);
+                ConfigurationMonitor configmonitor = new ConfigurationMonitor();                
+                configbean = new ObjectName("com.sun.genericra:name=Monitoring,category=Configuration");                
+                StandardMBean configmbean = new StandardMBean(configmonitor, ConfigurationMonitorMBean.class);
+                if (mbeanserver.isRegistered(configbean)) {
+                    mbeanserver.unregisterMBean(configbean);
+                }
+                mbeanserver.registerMBean(configmbean, configbean);  
+                logger.log(Level.INFO, "Registered monitoring MBean with name " + configbean);                
+        }
+        catch (Throwable t)
+        {
+            t.printStackTrace();
+            logger.log(Level.SEVERE, "Cannot get MBean server, monitoring is disabled");
+        }        
+    }
+    
+    private void unregisterMonitoringMBean() {
+        try {
+            mbeanserver.unregisterMBean(monitoringbean);
+            mbeanserver.unregisterMBean(configbean);
+            logger.log(Level.INFO, "Unregistered monitoing MBean " + monitoringbean);
+            
+        }
+        catch (Throwable t) {
+            logger.log(Level.SEVERE, "Cannot unregister monitoring mbean");
         }
     }
 
@@ -150,9 +211,17 @@ public class GenericJMSRA extends GenericJMSRAProperties
      */
     public void endpointActivation(MessageEndpointFactory mef,
         ActivationSpec spec) throws ResourceException {
-        EndpointConsumer consumer = new EndpointConsumer(mef, spec);
-        consumer.start();
-
+        EndpointConsumer consumer = new EndpointConsumer(mef, spec);        
+        consumer.start();        
+        if ((getMonitoring()) && (monitor != null))  {
+            if (consumer.getSpec().getApplicationName() != null) {  
+                monitor.addPool(consumer.getSpec().getApplicationName(), consumer.getPool());
+            }
+            else {
+                logger.log(Level.WARNING, "Application name is not configured in " +
+                        "activation spec config, cannot monitor this endpoint");
+            }
+        }
         Hashtable consumers = getConsumers();
         EndpointKey key = new EndpointKey(mef, spec);
         consumers.put(key, consumer);
@@ -169,8 +238,11 @@ public class GenericJMSRA extends GenericJMSRAProperties
     public void endpointDeactivation(MessageEndpointFactory mef,
         ActivationSpec spec) {
         EndpointKey key = new EndpointKey(mef, spec);
-        EndpointConsumer consumer = (EndpointConsumer) getConsumers().remove(key);
 
+        EndpointConsumer consumer = (EndpointConsumer) getConsumers().remove(key);
+        if ((getMonitoring()) && (monitor != null))  {
+            monitor.removePool(consumer.getSpec().getApplicationName());
+        }
         if (consumer != null) {
             consumer.stop();
         }

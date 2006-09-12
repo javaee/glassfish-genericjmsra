@@ -30,6 +30,8 @@ import java.util.logging.*;
 
 import javax.jms.*;
 
+import javax.transaction.xa.Xid;
+
 import javax.resource.ResourceException;
 import javax.resource.spi.ActivationSpec;
 import javax.resource.spi.BootstrapContext;
@@ -104,5 +106,52 @@ public abstract class AbstractXAResourceType implements XAResourceType,
         } else {
             return true;
         }
+    }
+    
+   /**
+     * The following is a method that has been added to aid printing of XID.
+     * This method of printing the XID may differ for different providers.
+     */
+    public String printXid(Xid xid) {
+        if (xid == null) {
+            return "null";
+        }
+        
+    /* The following code can be enabled for TM implementations 
+     * that do not have a toString implementation for xids
+     */
+        
+        String hextab = "0123456789ABCDEF";
+        StringBuffer data = new StringBuffer(256);
+        int i;
+        int value;
+        try {
+        
+        if (xid.getFormatId() == -1) {
+            return "-1";
+        }
+
+        // Add branch qualifier. Convert data string to hex
+        for (i = 0; i < xid.getBranchQualifier().length; i++) {
+            value = xid.getBranchQualifier()[i] & 0xff;
+            data.append(hextab.charAt(value / 16));
+            data.append(hextab.charAt(value & 15));
+        }
+
+        // Add global transaction id
+        for (i = 0; i < xid.getGlobalTransactionId().length; i++) {
+            value = xid.getGlobalTransactionId()[i] & 0xff;
+            data.append(hextab.charAt(value / 16));
+            data.append(hextab.charAt(value & 15));
+        }
+        }
+        catch (Exception e)
+        {
+            //for some providers this may not work.
+            ;
+        }
+
+        return new String(data);
+        
     }
 }

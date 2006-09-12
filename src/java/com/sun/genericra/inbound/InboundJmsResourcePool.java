@@ -18,7 +18,7 @@ package com.sun.genericra.inbound;
 
 import com.sun.genericra.GenericJMSRA;
 import com.sun.genericra.util.*;
-
+import com.sun.genericra.monitoring.*;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -56,18 +56,74 @@ public class InboundJmsResourcePool implements ServerSessionPool {
     private long TIME_OUT = 180 * 1000;
     private StringManager sm = StringManager.getManager(GenericJMSRA.class);
 
+    
     public InboundJmsResourcePool(EndpointConsumer consumer, boolean transacted) {
         this.consumer = consumer;
-        this.transacted = transacted;
+        this.transacted = transacted;      
         this.waitQ = new LinkedList();
     }
+    
+    public int getMaxSize() {
+        return this.maxSize;
+    }
+    
+    public long getMaxWaitTime() {
+        return this.maxWaitTime;
+    }
 
+    public int getCurrentResources() {
+        int ret = 0;
+        if (resources != null) {
+            ret = resources.size();
+        }
+        return ret;
+    }
+    
+    public int getBusyResources() {
+        int busy = 0;
+        if (resources != null) {
+            Iterator it = resources.iterator();
+            while (it.hasNext()) {
+                InboundJmsResource resource = (InboundJmsResource) it.next();
+                if (!resource.isFree()) {
+                    busy++;
+                }
+            }
+        }
+        return busy;
+    }
+    
+      public int getFreeResources() {
+        int free = 0;
+        if (resources != null) {
+            Iterator it = resources.iterator();
+            while (it.hasNext()) {
+                InboundJmsResource resource = (InboundJmsResource) it.next();
+                if (resource.isFree()) {
+                    free++;
+                }
+            }
+        }
+        return free;
+    }  
+      
+      public int getConnectionsInUse() {
+          return this.connectionsInUse;
+      }
+      
+      public int getWaiting() {
+          int wait = 0;
+          if (this.waitQ != null) {
+              wait = this.waitQ.size();
+          }
+          return wait;
+      }
+      
     public synchronized void initialize() throws ResourceException {
         try {
             resources = new ArrayList();
             this.maxSize = consumer.getSpec().getMaxPoolSize();
             this.maxWaitTime = consumer.getSpec().getMaxWaitTime() * 1000;
-
             if (consumer.getSpec().getSupportsXA()) {
                 XAConnectionFactory xacf = (XAConnectionFactory) consumer.getConnectionFactory();
                 this.con = createXAConnection(xacf);
@@ -94,6 +150,7 @@ public class InboundJmsResourcePool implements ServerSessionPool {
         }
     }
 
+    
     public EndpointConsumer getConsumer() {
         return this.consumer;
     }
@@ -212,8 +269,9 @@ public class InboundJmsResourcePool implements ServerSessionPool {
         Connection con = getConnection();
 
         if (isTopic()) {
+            String selector = constructSelector(name);
             consumer = ((TopicConnection) con).createConnectionConsumer((Topic) dest,
-                    name, this, maxMessages);
+                    selector, this, maxMessages);
         } else if (isQueue()) {
             consumer = ((QueueConnection) con).createConnectionConsumer((javax.jms.Queue) dest,
                     name, this, maxMessages);
@@ -223,6 +281,58 @@ public class InboundJmsResourcePool implements ServerSessionPool {
         }
 
         return consumer;
+    }
+
+    ConnectionConsumer createDurableConnectionConsumer(Destination dest, String name,
+            String sel, int maxMessages) throws JMSException {
+        ConnectionConsumer consumer = null;
+        Connection con = getConnection();
+        String selector = constructSelector(sel);
+        consumer = ((TopicConnection) con).createDurableConnectionConsumer((Topic) dest,
+                    name, selector, this, maxMessages);    
+        return consumer;
+    }
+    String constructSelector(String name) {
+        String selector = null;
+        try {
+            int instancecount = this.consumer.getSpec().getInstanceCount();
+            int instanceid = this.consumer.getSpec().getInstanceID();
+            String customeloadbalanceselector = this.consumer.getSpec().getLoadBalancingSelector();
+            if ((this.consumer.getSpec().getLoadBalancingRequired()) && 
+                    (instancecount > 1))
+            {
+                /** 
+                 * We have the instance number, total number of instances and 
+                 * the selector, create the message selector for load balancing 
+                 * and concatenate it with any message selector that is configured 
+                 * through the depoyment descriptor
+                 */
+                String loadbalancingselector = "(JMSTimestamp - (JMSTimestamp/"                     
+                                                    + instancecount + ")*" +
+                                                    instancecount + ") = " + instanceid;
+                String tmpselector = "";
+                 if ((name != null) && (!(name.equals("")))) {
+                    tmpselector = "(" + name + ")" + " AND ";
+                }                
+                _logger.log(Level.FINE, "Temporary selector  is " + tmpselector);
+                if (!(customeloadbalanceselector.equals(""))) {
+                    selector = tmpselector + "(" + customeloadbalanceselector + ")";
+                } 
+                else {                 
+                    selector = tmpselector + "(" + loadbalancingselector + ")"; 
+                }              
+            }
+            else {
+                _logger.log(Level.FINE, "Returning default selector " + selector);
+                return name;
+            }
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            selector = null;
+        }
+        _logger.log(Level.FINE, "Returning selector " + selector);
+        return selector;
     }
 
     Connection createDmdConnection(ConnectionFactory cf)
@@ -296,7 +406,7 @@ public class InboundJmsResourcePool implements ServerSessionPool {
 
             if (resource.isFree()) {
                 connectionsInUse++;
-
+                
                 return resource.markAsBusy();
             }
         }

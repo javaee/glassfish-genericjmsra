@@ -72,11 +72,12 @@ public class SimpleXAResourceProxy extends AbstractXAResourceType {
      *            protocol to commit the work done on behalf of xid.
      */
     public void commit(Xid xid, boolean onePhase) throws XAException {
-        debug("Committing tx..." + printXid(xid));
+        debugxid("Commiting Simple inbound transaction ", xid);
          if (xid == null) {
             xid = startxid;
-        }
-        _getXAResource().commit(xid, onePhase);
+         }
+        _getXAResource().commit(xid, onePhase);        
+        debugxid("Commited Simple inbound transaction ", xid);
     }
 
     /**
@@ -89,7 +90,8 @@ public class SimpleXAResourceProxy extends AbstractXAResourceType {
      *            One of TMSUCCESS, TMFAIL, or TMSUSPEND
      */
     public void end(Xid xid, int flags) throws XAException {
-        debug("Ending tx..." + printXid(xid) + " " + convertFlag(flags));
+        debug("Ending simple inbound transaction " + convertFlag(flags));
+        debugxid("Ending simple inbound transaction ", xid);
         if (endCalled)
         {
             return;
@@ -100,6 +102,7 @@ public class SimpleXAResourceProxy extends AbstractXAResourceType {
         }
             endCalled = true;
             _getXAResource().end(xid, flags);        
+            debugxid("Ended simple inbound transaction ", xid);
     }
 
     /**
@@ -166,7 +169,7 @@ public class SimpleXAResourceProxy extends AbstractXAResourceType {
      *         in the prepare method.
      */
     public int prepare(Xid xid) throws XAException {
-        debug(xid + "Preparing tx...");
+        debugxid("Preparing simple inbound transaction with ID ", xid);
          if (xid == null) {
             xid = startxid;
         }
@@ -196,15 +199,16 @@ public class SimpleXAResourceProxy extends AbstractXAResourceType {
      * @param xid
      *            A global transaction identifier
      */
-    public void rollback(Xid xid) throws XAException {
-        debug("Rolling back tx..." + printXid(xid));
+    public void rollback(Xid xid) throws XAException {        
+        debugxid("Rolling back simple inbound transaction with ID ", xid);
         if (xid == null) {
             xid = startxid;
         }
         if (torollback)
         {
             _getXAResource().rollback(xid);
-        }
+        }        
+        debugxid("Rolled back simple inbound transaction with ID ", xid);
     }
 
     /**
@@ -229,9 +233,11 @@ public class SimpleXAResourceProxy extends AbstractXAResourceType {
      * @return flags One of TMNOFLAGS, TMJOIN, or TMRESUME
      */
     public void start(Xid xid, int flags) throws XAException {
-        debug("Starting tx..." + printXid(xid)  + " " + convertFlag(flags));
+        debug("Starting tx..." + convertFlag(flags));
+        debugxid("Staring simple inbound transaction ", xid);
         startxid = xid;
-        _getXAResource().start(xid, flags);
+        _getXAResource().start(xid, flags);        
+        debugxid("Started simple inbound transaction ", xid);
     }
 
     private XAResource _getXAResource() throws XAException {
@@ -274,50 +280,10 @@ public class SimpleXAResourceProxy extends AbstractXAResourceType {
         logger.log(Level.FINEST, "SimpleXAResourceProxy :"  + s);
     }
     
-   /**
-     * The following is a method that has been added to aid printing of XID.
-     * This method of printing the XID may differ for different providers.
-     */
-    private String printXid(Xid xid) {
-        if (xid != null) {
-            return xid.toString();
+    void debugxid(String s, Xid xid) {
+        if (logger.getLevel() == Level.FINEST) {
+            logger.log(Level.FINEST, s + printXid(xid));
         }
-        else {
-            return "null";
-        }
-        
-    /* The following code can be enabled for TM implementations 
-     * that do not have a toString implementation for xids
-     */
-        /*
-        String hextab = "0123456789ABCDEF";
-        StringBuffer data = new StringBuffer(256);
-        int i;
-        int value;
-
-        if (xid == null) {
-            return "null";
-        }
-
-        if (xid.getFormatId() == -1) {
-            return "-1";
-        }
-
-        // Add branch qualifier. Convert data string to hex
-        for (i = 0; i < xid.getBranchQualifier().length; i++) {
-            value = xid.getBranchQualifier()[i] & 0xff;
-            data.append(hextab.charAt(value / 16));
-            data.append(hextab.charAt(value & 15));
-        }
-
-        // Add global transaction id
-        for (i = 0; i < xid.getGlobalTransactionId().length; i++) {
-            value = xid.getGlobalTransactionId()[i] & 0xff;
-            data.append(hextab.charAt(value / 16));
-            data.append(hextab.charAt(value & 15));
-        }
-
-        return new String(data);
-         */
     }
+
 }
