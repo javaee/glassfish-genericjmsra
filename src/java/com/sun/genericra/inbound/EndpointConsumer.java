@@ -173,10 +173,6 @@ public class EndpointConsumer {
                     con.setClientID(spec.getClientID());
                     logger.log(Level.INFO, "Setting the clientID to : " + spec.getClientID());                
                 }
-                
-                logger.log(Level.FINE,
-                    "Setting the clientID to : " + spec.getClientID());
-                con.setClientID(spec.getClientID());
             }
 
             if (spec.getSubscriptionDurability().equals(Constants.DURABLE)) {
