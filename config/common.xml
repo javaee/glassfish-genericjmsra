@@ -407,7 +407,7 @@ Variables Used:
 		<exec executable="${ASADMIN}" failonerror="false">
 			<arg line="create-resource-adapter-config" />
 			<arg line="--user ${admin.user}" />
-			<arg line="--password ${admin.password}" />
+			<arg line="--passwordfile ${admin.passwordfile}" />
 			<arg line="--host ${admin.host}" />
 			<arg line="--port ${admin.port}" />
 			<arg line="--target ${appserver.instance.name}" />
@@ -421,7 +421,7 @@ Variables Used:
 		<exec executable="${ASADMIN}" failonerror="false">
 			<arg line="delete-resource-adapter-config" />
 			<arg line="--user ${admin.user}" />
-			<arg line="--password ${admin.password}" />
+			<arg line="--passwordfile ${admin.passwordfile}" />
 			<arg line="--host ${admin.host}" />
 			<arg line="--port ${admin.port}" />
 			<arg line="--target ${appserver.instance.name}" />
@@ -651,11 +651,11 @@ Variables Used:
         ear file ${assemble.dir}/${appname}App.ear " level="verbose"/>
 <property name="deployed.app" value="${assemble.dir}/${appname}App.ear"/>
 
-<echo message="asadmin deploy --user ${admin.user} --password ${admin.password} --host ${admin.host} --port ${admin.port} --target ${appserver.instance.name} --type ${apptype} --retrieve ${assemble.dir} ${deployed.app}"/>
+<echo message="asadmin deploy --user ${admin.user} --passwordfile ${admin.passwordfile} --host ${admin.host} --port ${admin.port} --target ${appserver.instance.name} --type ${apptype} --retrieve ${assemble.dir} ${deployed.app}"/>
   <exec executable="${ASADMIN}" failonerror="false">
     <arg line="deploy"/>
     <arg line="--user ${admin.user}"/>
-    <arg line="--password ${admin.password}"/>
+    <arg line="--passwordfile ${admin.passwordfile}"/>
     <arg line="--host ${admin.host}"/>
     <arg line="--port ${admin.port}"/>
     <arg line="--target ${appserver.instance.name}"/>
@@ -675,7 +675,7 @@ successful"/>
   <exec executable="${ASADMIN}" failonerror="true">
     <arg line="deploy"/>
     <arg line="--user ${admin.user}"/>
-    <arg line="--password ${admin.password}"/>
+    <arg line="--passwordfile ${admin.passwordfile}"/>
     <arg line="--host ${admin.host}"/>
     <arg line="--port ${admin.port}"/>
     <arg line="--precompilejsp=${precompilejsp}"/>
@@ -697,7 +697,7 @@ successful"/>
   <exec executable="${ASADMIN}" failonerror="false">
     <arg line="deploy"/>
     <arg line="--user ${admin.user}"/>
-    <arg line="--password ${admin.password}"/>
+    <arg line="--passwordfile ${admin.passwordfile}"/>
     <arg line="--host ${admin.host}"/>
     <arg line="--port ${admin.port}"/>
     <arg line="--contextroot ${contextroot}"/>
@@ -716,7 +716,7 @@ successful"/>
   <exec executable="${ASADMIN}" failonerror="true">
     <arg line="deploy"/>
     <arg line="--user ${admin.user}"/>
-    <arg line="--password ${admin.password}"/>
+    <arg line="--passwordfile ${admin.passwordfile}"/>
     <arg line="--host ${admin.host}"/>
     <arg line="--port ${admin.port}"/>
     <arg line="--upload=true"/>
@@ -732,7 +732,7 @@ successful"/>
   <exec executable="${ASADMIN}" failonerror="true">
     <arg line="deploy"/>
     <arg line="--user ${admin.user}"/>
-    <arg line="--password ${admin.password}"/>
+    <arg line="--passwordfile ${admin.passwordfile}"/>
     <arg line="--host ${admin.host}"/>
     <arg line="--port ${admin.port}"/>
     <arg line="--upload=true"/>
@@ -752,7 +752,7 @@ successful"/>
   <exec executable="${ASADMIN}" failonerror="false">
     <arg line="undeploy"/>
     <arg line="--user ${admin.user}"/>
-    <arg line="--password ${admin.password}"/>
+    <arg line="--passwordfile ${admin.passwordfile}"/>
     <arg line="--host ${admin.host}"/>
     <arg line="--port ${admin.port}"/>
     <arg line="--type ${apptype}"/>
@@ -769,7 +769,7 @@ successful"/>
   <exec executable="${ASADMIN}" failonerror="false">
     <arg line="undeploy"/>
     <arg line="--user ${admin.user}"/>
-    <arg line="--password ${admin.password}"/>
+    <arg line="--passwordfile ${admin.passwordfile}"/>
     <arg line="--host ${admin.host}"/>
     <arg line="--port ${admin.port}"/>
     <arg line="--target ${appserver.instance.name}"/>	
@@ -785,7 +785,7 @@ successful"/>
   <exec executable="${ASADMIN}" failonerror="false">
     <arg line="undeploy"/>
     <arg line="--user ${admin.user}"/>
-    <arg line="--password ${admin.password}"/>
+    <arg line="--passwordfile ${admin.passwordfile}"/>
     <arg line="--host ${admin.host}"/>
     <arg line="--port ${admin.port}"/>
     <arg line="--target ${appserver.instance.name}"/>	
@@ -800,7 +800,7 @@ successful"/>
   <exec executable="${ASADMIN}" failonerror="false">
     <arg line="undeploy"/>
     <arg line="--user ${admin.user}"/>
-    <arg line="--password ${admin.password}"/>
+    <arg line="--passwordfile ${admin.passwordfile}"/>
     <arg line="--host ${admin.host}"/>
     <arg line="--port ${admin.port}"/>
     <arg line="--target ${appserver.instance.name}"/>	

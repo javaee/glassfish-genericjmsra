@@ -53,7 +53,7 @@
    <echo message="http.host ${http.host}" level="verbose"/>
 
    <property name="as.props"
-     value="--user ${admin.user} --password ${admin.password} --host ${admin.host} --port ${admin.port}"/>
+     value="--user ${admin.user} --passwordfile ${admin.passwordfile} --host ${admin.host} --port ${admin.port}"/>
    <property name="apptype" value="application"/>
     <!-- pointbase properties -->
     <property name="db.port"  value="9092"/>
