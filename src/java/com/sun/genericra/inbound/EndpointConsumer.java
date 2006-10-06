@@ -183,11 +183,6 @@ public class EndpointConsumer {
                     consmr = pool.createDurableConnectionConsumer(                
                     dst, subscription_name, spec.getMessageSelector(),1 );
                     logger.log(Level.FINE, "Created durable connection consumer" + dst);               
-                consmr = con.createDurableConnectionConsumer((javax.jms.Topic) dst,
-                        spec.getSubscriptionName(), spec.getMessageSelector(),
-                        pool, 1);
-                logger.log(Level.FINE,
-                    "Created durable connection consumer" + dst);
             } else {
                 consmr = pool.createConnectionConsumer(dst,
                         spec.getMessageSelector(), 1);
