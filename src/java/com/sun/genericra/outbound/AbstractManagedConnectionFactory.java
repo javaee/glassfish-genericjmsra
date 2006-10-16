@@ -70,7 +70,7 @@ public abstract class AbstractManagedConnectionFactory
         String s = System.getProperty(INACC_SYSTEM_PROP_KEY);
 
         if (s != null) {
-            inAppClientContainer = (new Boolean(s)).booleanValue();
+            inAppClientContainer = (Boolean.valueOf(s)).booleanValue();
         }
     }
 

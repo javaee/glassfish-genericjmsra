@@ -289,7 +289,7 @@ public class GenericJMSRA extends GenericJMSRAProperties
             }
         }
 
-        return (XAResource[]) xars.toArray();
+        return (XAResource[]) xars.toArray(new XAResource[0]);
     }
 
     /**

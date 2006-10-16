@@ -372,7 +372,7 @@ public class GenericJMSRAProperties implements ResourceAdapterAssociation,
      */
     public void setSupportsXA(boolean supportsXA) {
         logger.log(Level.FINEST, "setSupportsXA :" + supportsXA);
-        this.supportsXA = new Boolean(supportsXA);
+        this.supportsXA = Boolean.valueOf(supportsXA);
     }
 
     /**

@@ -197,7 +197,8 @@ public class EndpointConsumer {
                 con.setExceptionListener(reconHelper);
             }
         } catch (JMSException je) {
-            stop();
+            // stop();
+            closeConsumer();
             throw ExceptionUtils.newResourceException(je);
         }
 
