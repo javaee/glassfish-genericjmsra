@@ -151,8 +151,12 @@ public class SessionAdapter implements Session, TopicSession, QueueSession {
             debug("closing Queue browser " + qp);
             qp.close();
         }
-
-        this.physicalSession.setMessageListener(null); //XXX:??
+	
+	try {
+           this.physicalSession.setMessageListener(null); //XXX:??
+	} catch (JMSException jmse) {
+           debug("Failed setting Null messagelistener on session");
+	}
         this.messageConsumers.clear();
         this.messageProducers.clear();
         this.queueBrowsers.clear();
