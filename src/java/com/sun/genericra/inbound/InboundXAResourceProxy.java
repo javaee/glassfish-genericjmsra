@@ -223,7 +223,10 @@ public class InboundXAResourceProxy extends AbstractXAResourceType {
                     actualflag = XAResource.TMJOIN;
                 }
             } 
-        } 
+        } else if (flags == XAResource.TMRESUME) {
+		endCalled = false;
+		suspended = false;
+	}
         xar.start(savedXid(), actualflag);
     }
 
