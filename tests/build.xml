@@ -65,6 +65,8 @@
 		<echo message="@@## Stress.topic.clientId ##@@" />
 		<ant dir="stress.topic.clientId" target="${test-target}" />
 		<record name="connector.output" action="stop" />
+		<ant dir="suspendtx" target="${test-target}" />
+		<record name="connector.output" action="stop" />
 	</target>
 
 	<target name="clean" depends="init-common">
