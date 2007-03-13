@@ -5,4 +5,5 @@
 5. Test with WebLogic MQ and Oracle AQ once (1) is completed.
 6. Reorganize home page to reflect current status and release and also categorize the documents properly.
 7. Explore possiblity of extending GRA to support Amazon Simple Queue Service.  
+8 Extend the current resource monitoring capability to Outbound resources.
 
