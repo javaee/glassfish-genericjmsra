@@ -1,4 +1,8 @@
-1. Integrate Other JMS providers: Sonic, Fiorono etc with Generic RA for JMS.
-2. Test Reconnect capability properly.
-3. Integrate a cluster of external JMS provider with Generic RA for JMS.
+1. Implement synchronous message path for inbound with XA transactions support.
+2. Execute "findbugs" tool and fix possible issues.
+3. Update license version information in ra.xml.
+4. Create a test for Read only transactions.
+5. Test with WebLogic MQ and Oracle AQ once (1) is completed.
+6. Reorganize home page to reflect current status and release and also categorize the documents properly.
+7. Explore possiblity of extending GRA to support Amazon Simple Queue Service.  
 
