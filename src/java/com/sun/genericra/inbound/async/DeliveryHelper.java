@@ -14,9 +14,10 @@
  *  limitations under the License.
  *
  */
-package com.sun.genericra.inbound;
+package com.sun.genericra.inbound.async;
 
 import com.sun.genericra.AbstractXAResourceType;
+import com.sun.genericra.inbound.*;
 import com.sun.genericra.util.*;
 
 import java.util.logging.*;
@@ -44,7 +45,7 @@ public class DeliveryHelper {
         _logger = LogUtils.getLogger();
     }
     
-    ActivationSpec spec;
+    com.sun.genericra.inbound.ActivationSpec spec;
     InboundJmsResource jmsResource;
     XAResource xar;
     Message msg = null;

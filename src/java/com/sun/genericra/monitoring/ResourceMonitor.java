@@ -21,7 +21,9 @@ package com.sun.genericra.monitoring;
 import java.util.Hashtable;
 
 
-import com.sun.genericra.inbound.InboundJmsResourcePool;
+import com.sun.genericra.inbound.AbstractJmsResourcePool;
+
+import com.sun.genericra.inbound.async.InboundJmsResourcePool;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -47,7 +49,7 @@ public class ResourceMonitor implements ResourceMonitorMBean {
         poolstatistics = new Hashtable();
     }
     
-    public void addPool(String consumer, InboundJmsResourcePool ps) {
+    public void addPool(String consumer, AbstractJmsResourcePool ps) {
         
         if ((ps != null) && (consumer != null)) {
             try {
@@ -82,18 +84,18 @@ public class ResourceMonitor implements ResourceMonitorMBean {
         if (!validate(appname)) {
             return "Invalid application name";
         }
-        InboundJmsResourcePool pool = getPool(appname);
+        AbstractJmsResourcePool pool = getPool(appname);
         if (pool == null) {
             return "Endpoint not found OR could not be monitored";
         }
-        PoolStatistics ps = new PoolStatistics(pool);
+        PoolStatistics ps = new PoolStatistics((InboundJmsResourcePool)pool);
         return ps.formatStatistics();
     }
     
-    private InboundJmsResourcePool getPool(String name) {
-        InboundJmsResourcePool pool = null;
+    private AbstractJmsResourcePool getPool(String name) {
+        AbstractJmsResourcePool pool = null;
         try {
-            pool = (InboundJmsResourcePool) poolstatistics.get(name.trim());
+            pool = (AbstractJmsResourcePool) poolstatistics.get(name.trim());
         } catch (Exception e) {
             ;
         }
@@ -107,7 +109,7 @@ public class ResourceMonitor implements ResourceMonitorMBean {
         if (!validate(appname)) {
             return -1;
         }
-        InboundJmsResourcePool pool = getPool(appname);
+        AbstractJmsResourcePool pool = getPool(appname);
         if (pool == null) {
             return -2;
         }
@@ -122,7 +124,7 @@ public class ResourceMonitor implements ResourceMonitorMBean {
         if (!validate(appname)) {
             return -1;
         }
-        InboundJmsResourcePool pool = getPool(appname);
+        AbstractJmsResourcePool pool = getPool(appname);
         if (pool == null) {
             return -2;
         }
@@ -138,7 +140,7 @@ public class ResourceMonitor implements ResourceMonitorMBean {
         if (!validate(appname)) {
             return -1;
         }
-        InboundJmsResourcePool pool = getPool(appname);
+        AbstractJmsResourcePool pool = getPool(appname);
         if (pool == null) {
             return -2;
         }
@@ -153,7 +155,7 @@ public class ResourceMonitor implements ResourceMonitorMBean {
         if (!validate(appname)) {
             return -1;
         }
-        InboundJmsResourcePool pool = getPool(appname);
+        AbstractJmsResourcePool pool = getPool(appname);
         if (pool == null) {
             return -2;
         }
@@ -164,7 +166,7 @@ public class ResourceMonitor implements ResourceMonitorMBean {
         if (!validate(appname)) {
             return -1;
         }
-        InboundJmsResourcePool pool = getPool(appname);
+        AbstractJmsResourcePool pool = getPool(appname);
         if (pool == null) {
             return -2;
         }
@@ -175,7 +177,7 @@ public class ResourceMonitor implements ResourceMonitorMBean {
         if (!validate(appname)) {
             return -1;
         }
-        InboundJmsResourcePool pool = getPool(appname);
+        AbstractJmsResourcePool pool = getPool(appname);
         if (pool == null) {
             return -2;
         }
@@ -186,7 +188,7 @@ public class ResourceMonitor implements ResourceMonitorMBean {
         if (!validate(appname)) {
             return -1;
         }
-        InboundJmsResourcePool pool = getPool(appname);
+        AbstractJmsResourcePool pool = getPool(appname);
         if (pool == null) {
             return -2;
         }

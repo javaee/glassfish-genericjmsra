@@ -18,9 +18,9 @@
 
 package com.sun.genericra.monitoring;
 
-import com.sun.genericra.inbound.InboundJmsResourcePool;
+import com.sun.genericra.inbound.async.InboundJmsResourcePool;
 
-import com.sun.genericra.inbound.InboundJmsResource;
+import com.sun.genericra.inbound.async.InboundJmsResource;
 
 /**
  * Object that stores the pool parameters of an inbound resource pool.

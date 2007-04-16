@@ -74,7 +74,7 @@ public abstract class ObjectBuilder {
             throw new ResourceException(msg);
         }
 
-        StringTokenizer tokenList = new StringTokenizer(prop, delimiter);
+        CustomTokenizer tokenList = new CustomTokenizer(prop, delimiter);
 
         while (tokenList.hasMoreTokens()) {
             String propValuePair = (String) tokenList.nextToken();

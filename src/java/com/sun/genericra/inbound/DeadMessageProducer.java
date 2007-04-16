@@ -16,6 +16,7 @@
  */
 package com.sun.genericra.inbound;
 
+import com.sun.genericra.inbound.async.InboundJmsResourcePool;
 import com.sun.genericra.util.*;
 
 import java.util.logging.Level;
@@ -41,17 +42,19 @@ public class DeadMessageProducer {
         logger = LogUtils.getLogger();
     }
 
-    private Session session;
+    private Session session; 
     private String destinationType;
     private MessageProducer producer;
 
-    public DeadMessageProducer(Connection con, InboundJmsResourcePool pool,
-        Destination dest) throws JMSException {
+    public DeadMessageProducer(Connection con, AbstractJmsResourcePool pool, Destination dest)
+                throws JMSException {
+        
         destinationType = pool.getConsumer().getSpec()
                               .getDeadMessageDestinationType();
         logger.log(Level.FINE,
             "DeadMessageDestinationType is" +
             " obtained for message sender : " + destinationType);
+         
         createSession(con);
         createProducer(dest);
     }

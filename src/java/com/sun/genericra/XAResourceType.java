@@ -16,7 +16,7 @@
  */
 package com.sun.genericra;
 
-import com.sun.genericra.inbound.EndpointConsumer;
+import com.sun.genericra.inbound.async.EndpointConsumer;
 import com.sun.genericra.util.*;
 
 import java.io.Serializable;

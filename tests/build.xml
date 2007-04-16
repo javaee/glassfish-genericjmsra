@@ -37,7 +37,7 @@
 	<target name="setup" depends="init-common">
 		<!-- create RA config. By default configured against SJSMQ -->
 		<antcall target="create-resource-adapter-config-common">
-			<param name="raconfig.property" value="SupportsXA=true:ProviderIntegrationMode=javabean:ConnectionFactoryClassName=com.sun.messaging.ConnectionFactory:CommonSetterMethodName=setProperty:UserName=guest:Password=guest:QueueConnectionFactoryClassName=com.sun.messaging.QueueConnectionFactory:TopicConnectionFactoryClassName=com.sun.messaging.TopicConnectionFactory:QueueClassName=com.sun.messaging.Queue:TopicClassName=com.sun.messaging.Topic:LogLevel=info:UserName=guest:Password=guest:XAQueueConnectionFactoryClassName=com.sun.messaging.XAQueueConnectionFactory:XATopicConnectionFactoryClassName=com.sun.messaging.XATopicConnectionFactory:XAConnectionFactoryClassName=com.sun.messaging.XAConnectionFactory" />
+			<param name="raconfig.property" value="SupportsXA=true:ProviderIntegrationMode=javabean:DeliveryType=Synchronous:ConnectionFactoryClassName=com.sun.messaging.ConnectionFactory:CommonSetterMethodName=setProperty:UserName=guest:Password=guest:QueueConnectionFactoryClassName=com.sun.messaging.QueueConnectionFactory:TopicConnectionFactoryClassName=com.sun.messaging.TopicConnectionFactory:QueueClassName=com.sun.messaging.Queue:TopicClassName=com.sun.messaging.Topic:LogLevel=info:UserName=guest:Password=guest:XAQueueConnectionFactoryClassName=com.sun.messaging.XAQueueConnectionFactory:XATopicConnectionFactoryClassName=com.sun.messaging.XATopicConnectionFactory:XAConnectionFactoryClassName=com.sun.messaging.XAConnectionFactory" />
 			<param name="raname" value="genericra" />
 		</antcall>
 		<!-- deploy RA -->

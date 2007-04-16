@@ -14,9 +14,10 @@
  *  limitations under the License.
  *
  */
-package com.sun.genericra.inbound;
+package com.sun.genericra.inbound.async;
 
 import com.sun.genericra.GenericJMSRA;
+import com.sun.genericra.inbound.*;
 import com.sun.genericra.util.*;
 import com.sun.genericra.monitoring.*;
 import java.util.*;
@@ -34,7 +35,7 @@ import javax.transaction.xa.XAResource;
  * ServerSesionPool implementation as per JMS 1.1 spec.
  * @author Binod P.G
  */
-public class InboundJmsResourcePool implements ServerSessionPool {
+public class InboundJmsResourcePool extends AbstractJmsResourcePool implements ServerSessionPool {
     private static Logger _logger;
 
     static {
@@ -42,24 +43,16 @@ public class InboundJmsResourcePool implements ServerSessionPool {
     }
 
     private ArrayList resources;
-    private EndpointConsumer consumer;
     private int maxSize;
     private int connectionsInUse = 0;
     private long maxWaitTime;
-    private Connection con = null;
-    private Connection dmdCon = null;
-    private ConnectionFactory cf = null;
-    private boolean transacted = false;
-    private boolean destroyed = false;
-    private boolean stopped = false;
     private LinkedList waitQ = null;
     private long TIME_OUT = 180 * 1000;
     private StringManager sm = StringManager.getManager(GenericJMSRA.class);
 
     
     public InboundJmsResourcePool(EndpointConsumer consumer, boolean transacted) {
-        this.consumer = consumer;
-        this.transacted = transacted;      
+        super(consumer, transacted);    
         this.waitQ = new LinkedList();
     }
     
@@ -118,7 +111,35 @@ public class InboundJmsResourcePool implements ServerSessionPool {
           }
           return wait;
       }
-      
+  public ConnectionConsumer createConnectionConsumer(Destination dest, String name,
+            int maxMessages) throws JMSException {
+        ConnectionConsumer conconsumer = null;
+        Connection con = getConnection();
+        
+        if (isTopic()) {
+            String selector = constructSelector(name);
+            conconsumer = ((TopicConnection) con).createConnectionConsumer((Topic) dest,
+                    selector, this, maxMessages);
+        } else if (isQueue()) {
+            conconsumer = ((QueueConnection) con).createConnectionConsumer((javax.jms.Queue) dest,
+                    name, this, maxMessages);
+        } else {
+            conconsumer = con.createConnectionConsumer(dest, name, this,
+                    maxMessages);
+        }
+        
+        return conconsumer;
+    }
+    
+    public ConnectionConsumer createDurableConnectionConsumer(Destination dest, String name,
+            String sel, int maxMessages) throws JMSException {
+        ConnectionConsumer conconsumer = null;
+        Connection con = getConnection();
+        String selector = constructSelector(sel);
+        conconsumer = ((TopicConnection) con).createDurableConnectionConsumer((Topic) dest,
+                name, selector, this, maxMessages);
+        return conconsumer;
+    }     
     public synchronized void initialize() throws ResourceException {
         try {
             resources = new ArrayList();
@@ -151,17 +172,6 @@ public class InboundJmsResourcePool implements ServerSessionPool {
     }
 
     
-    public EndpointConsumer getConsumer() {
-        return this.consumer;
-    }
-
-    public Connection getConnection() {
-        return this.con;
-    }
-
-    public Connection getConnectionForDMD() throws  JMSException {
-        return this.dmdCon;
-    }
 
     public InboundJmsResource create() throws JMSException {
         _logger.log(Level.FINER, "Creating the ServerSession");
@@ -181,186 +191,7 @@ public class InboundJmsResourcePool implements ServerSessionPool {
         return new InboundJmsResource(sess, this, xar);
     }
 
-    XAConnection createXAConnection(XAConnectionFactory xacf)
-        throws JMSException {
-        XAConnection xac = null;
-        String user = consumer.getSpec().getUserName();
-        String password = consumer.getSpec().getPassword();
 
-        if (isQueue()) {
-            xac = ((XAQueueConnectionFactory) xacf).createXAQueueConnection(user,
-                    password);
-        } else if (isTopic()) {
-            xac = ((XATopicConnectionFactory) xacf).createXATopicConnection(user,
-                    password);
-        } else {
-            xac = xacf.createXAConnection(user, password);
-        }
-
-        return xac;
-    }
-
-    XASession createXASession(XAConnection con) throws JMSException {
-        XASession result = null;
-
-        if (isQueue()) {
-            result = ((XAQueueConnection) con).createXAQueueSession();
-        } else if (isTopic()) {
-            result = ((XATopicConnection) con).createXATopicSession();
-        } else {
-            result = con.createXASession();
-        }
-
-        return result;
-    }
-
-    private XAResource getXAResource(XASession session)
-        throws JMSException {
-        XAResource result = null;
-
-        if (isTopic()) {
-            result = ((XATopicSession) session).getXAResource();
-        } else if (isQueue()) {
-            result = ((XAQueueSession) session).getXAResource();
-        } else {
-            result = session.getXAResource();
-        }
-
-        return result;
-    }
-
-    Connection createConnection(ConnectionFactory cf) throws JMSException {
-        Connection con = null;
-        String user = consumer.getSpec().getUserName();
-        String password = consumer.getSpec().getPassword();
-
-        if (isTopic()) {
-            con = ((TopicConnectionFactory) cf).createTopicConnection(user,
-                    password);
-        } else if (isQueue()) {
-            con = ((QueueConnectionFactory) cf).createQueueConnection(user,
-                    password);
-        } else {
-            con = cf.createConnection(user, password);
-        }
-
-        return con;
-    }
-
-    Session createSession(Connection con) throws JMSException {
-        Session sess = null;
-
-        if (isTopic()) {
-            sess = ((TopicConnection) con).createTopicSession(false,
-                    Session.AUTO_ACKNOWLEDGE);
-        } else if (isQueue()) {
-            sess = ((QueueConnection) con).createQueueSession(false,
-                    Session.AUTO_ACKNOWLEDGE);
-        } else {
-            sess = con.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        }
-
-        return sess;
-    }
-
-    ConnectionConsumer createConnectionConsumer(Destination dest, String name,
-        int maxMessages) throws JMSException {
-        ConnectionConsumer consumer = null;
-        Connection con = getConnection();
-
-        if (isTopic()) {
-            String selector = constructSelector(name);
-            consumer = ((TopicConnection) con).createConnectionConsumer((Topic) dest,
-                    selector, this, maxMessages);
-        } else if (isQueue()) {
-            consumer = ((QueueConnection) con).createConnectionConsumer((javax.jms.Queue) dest,
-                    name, this, maxMessages);
-        } else {
-            consumer = con.createConnectionConsumer(dest, name, this,
-                    maxMessages);
-        }
-
-        return consumer;
-    }
-
-    ConnectionConsumer createDurableConnectionConsumer(Destination dest, String name,
-            String sel, int maxMessages) throws JMSException {
-        ConnectionConsumer consumer = null;
-        Connection con = getConnection();
-        String selector = constructSelector(sel);
-        consumer = ((TopicConnection) con).createDurableConnectionConsumer((Topic) dest,
-                    name, selector, this, maxMessages);    
-        return consumer;
-    }
-    String constructSelector(String name) {
-        String selector = null;
-        try {
-            int instancecount = this.consumer.getSpec().getInstanceCount();
-            int instanceid = this.consumer.getSpec().getInstanceID();
-            String customeloadbalanceselector = this.consumer.getSpec().getLoadBalancingSelector();
-            if ((this.consumer.getSpec().getLoadBalancingRequired()) && 
-                    (instancecount > 1))
-            {
-                /** 
-                 * We have the instance number, total number of instances and 
-                 * the selector, create the message selector for load balancing 
-                 * and concatenate it with any message selector that is configured 
-                 * through the depoyment descriptor
-                 */
-                String loadbalancingselector = "(JMSTimestamp - (JMSTimestamp/"                     
-                                                    + instancecount + ")*" +
-                                                    instancecount + ") = " + instanceid;
-                String tmpselector = "";
-                 if ((name != null) && (!(name.equals("")))) {
-                    tmpselector = "(" + name + ")" + " AND ";
-                }                
-                _logger.log(Level.FINE, "Temporary selector  is " + tmpselector);
-                if (!(customeloadbalanceselector.equals(""))) {
-                    selector = tmpselector + "(" + customeloadbalanceselector + ")";
-                } 
-                else {                 
-                    selector = tmpselector + "(" + loadbalancingselector + ")"; 
-                }              
-            }
-            else {
-                _logger.log(Level.FINE, "Returning default selector " + selector);
-                return name;
-            }
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            selector = null;
-        }
-        _logger.log(Level.FINE, "Returning selector " + selector);
-        return selector;
-    }
-
-    Connection createDmdConnection(ConnectionFactory cf)
-        throws JMSException {
-        Connection con = null;
-        String user = consumer.getSpec().getUserName();
-        String password = consumer.getSpec().getPassword();
-
-        if (consumer.getSpec().getDeadMessageDestinationType().equals(Constants.TOPIC)) {
-            con = ((TopicConnectionFactory) cf).createTopicConnection(user,
-                    password);
-        } else if (consumer.getSpec().getDeadMessageDestinationType().equals(Constants.QUEUE)) {
-            con = ((QueueConnectionFactory) cf).createQueueConnection(user,
-                    password);
-        } else {
-            con = cf.createConnection(user, password);
-        }
-
-        return con;
-    }
-
-    private boolean isTopic() {
-        return consumer.getSpec().getDestinationType().equals(Constants.TOPIC);
-    }
-
-    private boolean isQueue() {
-        return consumer.getSpec().getDestinationType().equals(Constants.QUEUE);
-    }
 
     public ServerSession getServerSession() throws JMSException {
         InboundJmsResource result = null;
@@ -502,9 +333,7 @@ public class InboundJmsResourcePool implements ServerSessionPool {
         }
     }
 
-    public boolean isTransacted() {
-        return transacted;
-    }
+
 
     public void resumeWaitingThread() {
         PauseObject obj = null;

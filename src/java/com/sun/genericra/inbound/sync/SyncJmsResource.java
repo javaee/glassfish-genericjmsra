@@ -14,9 +14,13 @@
  *  limitations under the License.
  *
  */
-package com.sun.genericra.inbound;
+package com.sun.genericra.inbound.sync;
 
 import com.sun.genericra.GenericJMSRA;
+import com.sun.genericra.inbound.*;
+import com.sun.genericra.inbound.async.DeliveryHelper;
+import com.sun.genericra.inbound.async.MessageListener;
+import com.sun.genericra.inbound.async.WorkImpl;
 import com.sun.genericra.util.*;
 
 import java.util.logging.Level;
@@ -33,146 +37,128 @@ import javax.transaction.xa.XAResource;
 
 
 /**
- * ServerSession implementation as per JMS 1.1 specification.
- * This serves as a placeholder for a MessageEndpoint obtained from
- * application server.
  *
- * @author Binod P.G
  */
-public class InboundJmsResource implements ServerSession {
+public class SyncJmsResource extends AbstractJmsResource {
     private static Logger _logger;
-
+    
     static {
         _logger = LogUtils.getLogger();
     }
-
-    private Session session;
-    private XAResource xaresource;
-    private MessageEndpoint endPoint;
     private boolean free;
-    private GenericJMSRA ra;
-    private InboundJmsResourcePool pool;
-    private DeliveryHelper helper;
-
-    public InboundJmsResource(Session session, InboundJmsResourcePool pool)
-        throws JMSException {
+    
+    private SyncDeliveryHelper helper;
+    
+    private Work w ;
+    
+    private boolean stopWork = false;
+    
+    private int sessionid;
+    
+    public SyncJmsResource(Session session, SyncJmsResourcePool pool)
+    throws JMSException {        
         this(session, pool, null);
+    }  
+    
+    
+    public SyncJmsResource(Session session, SyncJmsResourcePool pool,
+            XAResource xaresource) throws JMSException {
+        super(session, pool, xaresource);
     }
-
-    public InboundJmsResource(Session session, InboundJmsResourcePool pool,
-        XAResource xaresource) throws JMSException {
-        this.session = session;
-        this.xaresource = xaresource;
-        this.pool = pool;
-        this.ra = (GenericJMSRA) pool.getConsumer().getResourceAdapter();
+    
+    public void setSessionid(int id) {
+        sessionid = id;
     }
-
+    public int getSessionid() {
+        return sessionid;
+    }
+    public MessageConsumer getReceiver() throws JMSException {
+        return getPool().createMessageConsumer(session);
+    }
     public void start() throws JMSException {
         try {
             _logger.log(Level.FINER,
-                "Provider is starting the message consumtion");
-
-            Work w = new WorkImpl(this);
+                    "Sync Provider is starting the message consumtion #" + sessionid);
+            
+            w = new SyncWorker(this);
             WorkManager wm = ra.getWorkManager();
             wm.scheduleWork(w);
-        } catch (WorkException e) {
-            throw ExceptionUtils.newJMSException(e);
-        }
+        } catch (WorkException we) {
+            throw ExceptionUtils.newJMSException(we);
+        } 
     }
-
+    
     /**
      * Each time a serversession is checked out from the pool, the listener
      * will be recreated.
      */
-    public InboundJmsResource refreshListener() throws JMSException {
-        MessageListener listener = new MessageListener(this, pool);
-        this.session.setMessageListener(listener);
-          helper = new DeliveryHelper(this, pool);
-
-        return this;
+    public void refreshListener() throws JMSException {
+        
+        helper = new SyncDeliveryHelper(this, (SyncJmsResourcePool)pool);
+        
+      //  return this;
     }
-
-    public void destroy() {
+    
+    public boolean getIsWorkStopped() {
+        return stopWork;
+    }
+    
+    public void destroy() {        
         if (session != null) {
             try {
+                stopWork = true;
+                w.release();
+                _logger.log(Level.FINE, "Released the Worker the session #" + sessionid);
                 session.close();
+                _logger.log(Level.FINE, "Closed the session #" + sessionid);
             } catch (Exception e) {
                 if (_logger.isLoggable(Level.FINE)) {
                     _logger.log(Level.FINE, e.getMessage(), e);
                 }
             }
-        }
-
-        releaseEndpoint();
+        }        
+       // releaseEndpoint();
     }
-
-    public boolean isFree() {
-        return free;
-    }
-
-    public InboundJmsResource markAsBusy() {
-        this.free = false;
-
-        return this;
-    }
-
-    public InboundJmsResource markAsFree() {
-        this.free = true;
-
-        return this;
-    }
-
-    public DeliveryHelper getDeliveryHelper() {
+    
+    public SyncDeliveryHelper getDeliveryHelper() {
         return this.helper;
     }
-
+    
     public XAResource getXAResource() {
         return this.xaresource;
     }
-
+    
     public Session getSession() {
         _logger.log(Level.FINEST, "Message provider got the session :" +
-            session);
-
+                session);
+        
         return session;
     }
-
-    public InboundJmsResourcePool getPool() {
-        return this.pool;
-    }
-
+    
     public XASession getXASession() {
         return (XASession) session;
     }
-
-    public MessageEndpoint getEndpoint() {
-        return this.endPoint;
-    }
-
-    public void release() {
-        getPool().put(this);
-    }
-
+    
     /**
      * Creates the MessageEndpoint and start the delivery.
      */
     public void refresh() throws JMSException {
         MessageEndpointFactory mef = pool.getConsumer()
-                                         .getMessageEndpointFactory();
-
+        .getMessageEndpointFactory();       
         try {
-            _logger.log(Level.FINER, "Creating message endpoint : " +
-                xaresource);
+            _logger.log(Level.FINER, "Creating message endpoint #" + sessionid +
+                    xaresource);
             endPoint = mef.createEndpoint(helper.getXAResource());
             endPoint.beforeDelivery(this.ra.getListeningMethod());
-            _logger.log(Level.FINE, "Created endpoint : ");
+            _logger.log(Level.FINE, "Created endpoint  #" + sessionid);
         } catch (Exception e) {
-            _logger.log(Level.SEVERE, "Refresh resource failed");
+            e.printStackTrace();
+            _logger.log(Level.SEVERE, "Refresh resource failed #" + sessionid);
             // TODO. Should we eat this exception?
             //throw ExceptionUtils.newJMSException(e);
         }
     }
-
+    
     /**
      * Completes the Message delivery and release the MessageEndpoint.
      */
@@ -182,18 +168,18 @@ public class InboundJmsResource implements ServerSession {
                 this.endPoint.afterDelivery();
             }
         } catch (Exception re) {
-            _logger.log(Level.SEVERE, "After delivery failed " + re.getMessage(), re);
+            _logger.log(Level.SEVERE, "After delivery failed in resource #" + sessionid
+                        + re.getMessage());
         } finally {
             if (this.endPoint != null) {
                 try {
-                    this.endPoint.release ();
-                    _logger.log(Level.FINE, "InboundJMSResource: released endpoint : ");
+                    this.endPoint.release();
+                    _logger.log(Level.FINE, "SyncJmsResource: released endpoint in #" 
+                            + sessionid);
                 } catch (Exception e) {
                     _logger.log(Level.SEVERE,
-                        "InboundJMSResource: release endpoint failed ");
-                    ;
-                }
-
+                            "SyncJmsResource: release endpoint failed #" + sessionid);                    
+                }                
                 this.endPoint = null;
             }
         }

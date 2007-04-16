@@ -75,6 +75,11 @@ public class ActivationSpec extends GenericJMSRAProperties
     private static String INSTANCE_CLIENTID_PROPERTY = "com.sun.genericra.loadbalancing.instance.clientid";
     /* END of properties for load balancing */
     
+    /*Sync consumer props*/
+    private int batchSize = 1;
+    private boolean huaMode = false;
+    
+    
     private StringManager sm = StringManager.getManager(GenericJMSRA.class);
 
     public void setMaxWaitTime(int waitTime) {
@@ -412,6 +417,7 @@ public class ActivationSpec extends GenericJMSRAProperties
         s = s + "{Instance ID = " + getInstanceID() + "},";
         s = s + "{CustomLoadBalancingMessageSelector = " + getLoadBalancingSelector() + "},";
         s = s + "{ShareClientID = " + getShareClientid() + "}";
+        s = s + "{DeliveryType = " + getDeliveryType() + "}";
  
         return s;
     }
@@ -443,5 +449,21 @@ public class ActivationSpec extends GenericJMSRAProperties
      */
     public void setApplicationName(String applicationName) {
         this.applicationName = applicationName;
+    }
+    
+    public int getBatchSize() {
+        return batchSize;
+    }
+    
+    public void setBatchSize(int size) {
+        batchSize = size;
+    }
+    
+    public void setHUAMode(boolean huamode){
+        huaMode = huamode;
+    }
+    
+    public boolean getHUAMode() {
+        return huaMode;
     }
 }

@@ -156,7 +156,10 @@ public class GenericJMSRAProperties implements ResourceAdapterAssociation,
     private GenericJMSRAProperties raprops;
     
     private boolean enableMonitoring = false;
+        
+    private String deliveryType;
     
+    private String deliveryConcurrencyMode;
     /**
      * Sets the connection factory class name.
      *
@@ -182,6 +185,29 @@ public class GenericJMSRAProperties implements ResourceAdapterAssociation,
         }
     }
 
+    public String getDeliveryConcurrencyMode() {
+        return deliveryConcurrencyMode;
+    }
+    
+    public void setDeliveryConcurrencyMode(String mode) {
+        deliveryConcurrencyMode = mode;
+    }
+    
+    public String getDeliveryType() {
+        if (this.deliveryType != null) {
+            return this.deliveryType;
+        } else if (raprops != null) {
+            return raprops.deliveryType;
+        } else {
+            return null;
+        }
+    }
+    
+    public void setDeliveryType(String delivery) {
+        logger.log(Level.FINEST,
+            "setDeliveryType :" + delivery);
+        deliveryType = delivery;
+    }
     /**
      * Sets the queue connection factory class name.
      *
@@ -383,7 +409,7 @@ public class GenericJMSRAProperties implements ResourceAdapterAssociation,
     public boolean getSupportsXA() {
         if (this.supportsXA != null) {
             return this.supportsXA.booleanValue();
-        } else if (raprops != null) {
+        } else if ((raprops != null) && (raprops.supportsXA != null)) {
             return raprops.supportsXA.booleanValue();
         } else {
             return false;
@@ -440,6 +466,7 @@ public class GenericJMSRAProperties implements ResourceAdapterAssociation,
         }
     }
 
+    
     /**
      *  Sets the common setter method.
      *
@@ -705,7 +732,8 @@ public class GenericJMSRAProperties implements ResourceAdapterAssociation,
         s = s + "{CommonSetterMethodName = " + getCommonSetterMethodName() +
             "},";
         s = s + "{SupportsXA = " + getSupportsXA() + "},";
-
+        s = s + "{DeliveryType = " + getDeliveryType() + "},";
         return s;
     }
+
 }

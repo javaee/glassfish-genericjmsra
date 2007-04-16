@@ -16,7 +16,8 @@
  */
 package com.sun.genericra;
 
-import com.sun.genericra.inbound.EndpointConsumer;
+import com.sun.genericra.inbound.EndpointConsumerFactory;
+import com.sun.genericra.inbound.AbstractConsumer;
 import com.sun.genericra.util.*;
 
 import java.io.Serializable;
@@ -211,7 +212,7 @@ public class GenericJMSRA extends GenericJMSRAProperties
      */
     public void endpointActivation(MessageEndpointFactory mef,
         ActivationSpec spec) throws ResourceException {
-        EndpointConsumer consumer = new EndpointConsumer(mef, spec);        
+        AbstractConsumer consumer = EndpointConsumerFactory.createEndpointConsumer(mef, spec);        
         consumer.start();        
         if ((getMonitoring()) && (monitor != null))  {
             if (consumer.getSpec().getApplicationName() != null) {  
@@ -239,7 +240,7 @@ public class GenericJMSRA extends GenericJMSRAProperties
         ActivationSpec spec) {
         EndpointKey key = new EndpointKey(mef, spec);
 
-        EndpointConsumer consumer = (EndpointConsumer) getConsumers().remove(key);
+        AbstractConsumer consumer = (AbstractConsumer) getConsumers().remove(key);
         if ((getMonitoring()) && (monitor != null))  {
             monitor.removePool(consumer.getSpec().getApplicationName());
         }
@@ -272,10 +273,10 @@ public class GenericJMSRA extends GenericJMSRAProperties
             if (tmpSpec.getSupportsXA()) {
                 XAConnection xacon = null;
                 XASession xasess = null;
-                EndpointConsumer consumer = null;
+                AbstractConsumer consumer = null;
 
                 try {
-                        consumer = new EndpointConsumer(tmpSpec);
+                    consumer = EndpointConsumerFactory.createEndpointConsumer(tmpSpec);
                     consumer.initialize(true);
                     xacon = (XAConnection) consumer.getConnection();
                     xasess = xacon.createXASession();

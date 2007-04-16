@@ -21,7 +21,6 @@ import java.lang.reflect.*;
 import java.security.*;
 
 import java.util.Hashtable;
-import java.util.StringTokenizer;
 import java.util.logging.*;
 
 import javax.naming.*;

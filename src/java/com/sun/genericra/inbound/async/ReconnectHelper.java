@@ -14,8 +14,9 @@
  *  limitations under the License.
  *
  */
-package com.sun.genericra.inbound;
+package com.sun.genericra.inbound.async;
 
+import com.sun.genericra.inbound.*;
 import com.sun.genericra.util.*;
 
 import java.util.logging.*;

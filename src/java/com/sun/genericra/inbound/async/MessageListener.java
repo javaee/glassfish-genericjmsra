@@ -14,8 +14,9 @@
  *  limitations under the License.
  *
  */
-package com.sun.genericra.inbound;
+package com.sun.genericra.inbound.async;
 
+import com.sun.genericra.inbound.*;
 import com.sun.genericra.util.*;
 
 import java.util.logging.Level;
@@ -45,7 +46,7 @@ public class MessageListener implements javax.jms.MessageListener {
     public MessageListener(InboundJmsResource jmsResource,
         InboundJmsResourcePool pool) {
         this.jmsResource = jmsResource;
-        this.consumer = pool.getConsumer();
+        this.consumer = (EndpointConsumer)pool.getConsumer();
     }
 
     public void onMessage(Message message){

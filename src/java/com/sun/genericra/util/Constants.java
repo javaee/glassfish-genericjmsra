@@ -106,5 +106,6 @@ public final class Constants {
          * String indicating SEVERE log level
          */
         public static final String SEVERE = "severe";
+        
     }
 }
