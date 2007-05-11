@@ -335,11 +335,11 @@ public class InboundXAResourceProxy extends AbstractXAResourceType {
         return this.xar;
     }
 
-    void setToRollback(boolean flag) {
+    public void setToRollback(boolean flag) {
         toRollback = flag;
     }
 
-    boolean endCalled() {
+    public boolean endCalled() {
         return endCalled;
     }
 

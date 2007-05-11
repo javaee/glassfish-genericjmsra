@@ -62,7 +62,18 @@ public class DeliveryHelper {
         AbstractXAResourceType xarObject = null;
         
         if (redeliveryRequired()) {
-            xarObject = new InboundXAResourceProxy(jmsResource.getXAResource());
+            if (this.spec.getUseFirstXAForRedelivery()) {
+                /** Some MQ providers like MQ Series expect the transaction
+                 * to be started before the session is run.
+                 * In these cases we cannot use our delayed start logic for redelivery
+                 * So we need the old (1.6) way of dealing with redelivery
+                 */
+                _logger.log(Level.FINE,"Using First XA redelivery logic");
+                xarObject = new FirstXAResourceProxy(jmsResource.getXAResource());
+            } else {
+                _logger.log(Level.FINE,"Using Inbound XA reliable redelivery logic");
+                xarObject = new InboundXAResourceProxy(jmsResource.getXAResource());
+            }
         } else {
             xarObject = new SimpleXAResourceProxy(jmsResource.getXAResource());
             
@@ -100,14 +111,14 @@ public class DeliveryHelper {
                 
                 
                 if (redeliveryRequired()) {
-                    InboundXAResourceProxy localXar = (InboundXAResourceProxy) this.xar;
+                    AbstractXAResourceType localXar = (AbstractXAResourceType) this.xar;
                     if (localXar.endCalled() == false) {
                         localXar.end(null, XAResource.TMSUCCESS);
                     }
                     localXar.prepare(null);
                     _logger.log(Level.FINE, "Prepared DMD transaction");
                 } else {
-                    SimpleXAResourceProxy localXar = (SimpleXAResourceProxy) this.xar;
+                    AbstractXAResourceType localXar = (AbstractXAResourceType) this.xar;
                     localXar.end(null, XAResource.TMSUCCESS);
                     localXar.prepare(null);
                     _logger.log(Level.FINE, "Prepared DMD transaction");
@@ -116,17 +127,10 @@ public class DeliveryHelper {
                 .getConnectionForDMD();
                 msgProducer = createProducer(connection, this.dest);
                 msgProducer.send(this.msg);
-                _logger.log(Level.FINE, "Sent message to DMD");
-                if (redeliveryRequired()) {
-                    InboundXAResourceProxy localXar = (InboundXAResourceProxy) this.xar;
-                    localXar.commit(null, false);
-                    _logger.log(Level.FINE, "Commited DMD transaction");
-                    
-                } else {
-                    SimpleXAResourceProxy localXar = (SimpleXAResourceProxy) this.xar;
-                    localXar.commit(null, false);
-                    _logger.log(Level.FINE, "Commited DMD transaction");
-                }
+                _logger.log(Level.FINE, "Sent message to DMD");                
+                AbstractXAResourceType localXar = (AbstractXAResourceType) this.xar;
+                localXar.commit(null, false);
+                _logger.log(Level.FINE, "Commited DMD transaction");                
                 /**
                  * We know that if commit/prepare fails we may have
                  * the message in the DMD, the message would be present in
@@ -159,7 +163,7 @@ public class DeliveryHelper {
                 _logger.log(Level.SEVERE, "FAILED : sending message to DMD");
             }else {
                 _logger.log(Level.SEVERE, "FAILED : sending message to DMD");
-                SimpleXAResourceProxy localXar = (SimpleXAResourceProxy) this.xar;
+                AbstractXAResourceType localXar = (AbstractXAResourceType) this.xar;
                 localXar.setToRollback(true);
                 try {
                     localXar.rollback(null);
@@ -180,6 +184,7 @@ public class DeliveryHelper {
     }
     
     public void deliver(Message message, Destination d){
+        _logger.log(Level.FINE, "Delivery Helper delivering message");
         this.msg = message;
         this.dest = d;
         deliver();
@@ -189,18 +194,18 @@ public class DeliveryHelper {
         int myattempts = 0;
         int attempts = this.spec.getRedeliveryAttempts();
         
-        InboundXAResourceProxy localXar = null;
+        AbstractXAResourceType  localXar = null;
         while (true) {
             try {
                 deliverMessage(msg);
-                
+                _logger.log(Level.FINE, "Delivery succedded");
                 if (redeliveryRequired()) {
                     
                     /*
                      * Make the XA rollback  enable.
                      *  This is because we will start the XA now.
                      */
-                    localXar =  (InboundXAResourceProxy) xar;
+                    localXar = (AbstractXAResourceType) xar;
                     localXar.startDelayedXA();
                     localXar.setToRollback(true);
                 }
@@ -213,7 +218,7 @@ public class DeliveryHelper {
                      * the XA is not started, we start the XA only when delivery
                      * is successful, here delivery has failed.
                      */
-                    localXar =  (InboundXAResourceProxy) xar;
+                    localXar =  (AbstractXAResourceType) xar;
                     localXar.setToRollback(false);
                     try {
                         _logger.log(Level.FINE,
@@ -224,7 +229,7 @@ public class DeliveryHelper {
                         ex.printStackTrace();
                     }
                 } else {
-                    SimpleXAResourceProxy simpleXar =  (SimpleXAResourceProxy) this.xar;
+                    AbstractXAResourceType simpleXar =  (AbstractXAResourceType) this.xar;
                     simpleXar.setToRollback(false);
                 }
                 if (transacted) {
@@ -233,7 +238,7 @@ public class DeliveryHelper {
                         
                         _logger.log(Level.FINEST,
                                 "Releasing the endpoint after an exception");
-                        this.jmsResource.releaseEndpoint();                   
+                        this.jmsResource.releaseEndpoint();
                         
                         try {
                             Thread.sleep(spec.getRedeliveryInterval() * 1000);

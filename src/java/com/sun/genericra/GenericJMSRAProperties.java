@@ -157,6 +157,8 @@ public class GenericJMSRAProperties implements ResourceAdapterAssociation,
     
     private boolean enableMonitoring = false;
     
+    private Boolean usefirstxaforredelivery = null;
+    
     /**
      * Sets the connection factory class name.
      *
@@ -383,7 +385,7 @@ public class GenericJMSRAProperties implements ResourceAdapterAssociation,
     public boolean getSupportsXA() {
         if (this.supportsXA != null) {
             return this.supportsXA.booleanValue();
-        } else if (raprops != null) {
+        } else if ((raprops != null) && (raprops.supportsXA != null)) {
             return raprops.supportsXA.booleanValue();
         } else {
             return false;
@@ -623,7 +625,33 @@ public class GenericJMSRAProperties implements ResourceAdapterAssociation,
     public boolean getMonitoring() {
         return enableMonitoring;
     }
-    
+   /**
+     * Gets the redelivery logic .
+     *
+     * @return  logic.
+     */
+    public boolean getUseFirstXAForRedelivery() {
+	if (this.usefirstxaforredelivery != null) {
+		return this.usefirstxaforredelivery.booleanValue();
+	} else if ((raprops != null) && (raprops.usefirstxaforredelivery !=null)) {
+		return raprops.usefirstxaforredelivery.booleanValue();
+	} else {
+            return false;
+	}
+    }
+
+    /**
+     * Sets the redelivery logic, for some providers like MQseries the XA
+     *  start cannot be delayed, so we need to set this to true.
+     *
+     * @param connectionFactoryClassName    
+     */
+    public void setUseFirstXAForRedelivery (
+        boolean usefirstxa) {
+        logger.log(Level.FINEST,
+            "setUseFirstXAForRedelivery " + usefirstxa);
+        usefirstxaforredelivery = Boolean.valueOf(usefirstxa);
+    }    
     /**
      * Overides the equals method of object.
      *
@@ -705,6 +733,7 @@ public class GenericJMSRAProperties implements ResourceAdapterAssociation,
         s = s + "{CommonSetterMethodName = " + getCommonSetterMethodName() +
             "},";
         s = s + "{SupportsXA = " + getSupportsXA() + "},";
+        s = s + "{UseFirstXAForRedelivery = " + getUseFirstXAForRedelivery() + "},";
 
         return s;
     }

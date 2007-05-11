@@ -275,7 +275,17 @@ public class SimpleXAResourceProxy extends AbstractXAResourceType {
 
         return "" + i;
     }
-
+    
+    public void startDelayedXA(){
+         
+        throw new UnsupportedOperationException();
+    }
+    public boolean endCalled() {
+        // nobody will call this method on this class
+        
+        throw new UnsupportedOperationException();
+    }
+    
     void debug(String s) {
         logger.log(Level.FINEST, "SimpleXAResourceProxy :"  + s);
     }

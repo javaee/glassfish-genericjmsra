@@ -14,52 +14,41 @@
  *  limitations under the License.
  *
  */
-package com.sun.genericra.outbound;
+package com.sun.genericra.inbound;
 
-import com.sun.genericra.AbstractXAResourceType;
-import com.sun.genericra.XAResourceType;
-import com.sun.genericra.util.ExceptionUtils;
-import com.sun.genericra.util.LogUtils;
-
-import java.util.logging.*;
-
-import javax.jms.Connection;
-
-import javax.resource.ResourceException;
-
+import javax.transaction.xa.Xid;
 import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
-import javax.transaction.xa.Xid;
+import com.sun.genericra.XAResourceType;
+import com.sun.genericra.AbstractXAResourceType;
+
 
 
 /**
  * <code>XAResource</code> wrapper for Generic JMS Connector. This class
- * intercepts all calls to the actual XAResource object of the physical
- * JMS connection and performs corresponding book-keeping tasks in the
- * ManagedConnection representing the physical connection.
+ * intercepts all calls to the actual XAResource to facilitate redelivery.
  *
- *  @todo: This should be a dynamic proxy as well!!
+ *  Basically each (re)delivery for message will happen in different transactions
+ *  from appserver perspective. However they will be intercepted and only
+ *  one XID will be actually used with JMS provider.
+ *
+ *  @author Binod P.G
  */
-public class XAResourceProxy extends AbstractXAResourceType {
-    private static Logger logger;
+public class FirstXAResourceProxy extends AbstractXAResourceType {
     
-    static {
-        logger = LogUtils.getLogger();
+    
+    private XAResource xar = null;
+    private boolean toRollback = true;
+    private boolean rolledback = false;
+    private boolean suspended = false;
+    private boolean endCalled = false;
+    private Xid savedxid = null;
+    
+    
+    public FirstXAResourceProxy(XAResource xar) {
+        this.xar = xar;
     }
     
-    private ManagedConnection mc;
-    
-    /**
-     * Constructor for XAResourceImpl
-     *
-     * @param xar
-     *            <code>XAResource</code>
-     * @param mc
-     *            <code>ManagedConnection</code>
-     */
-    public XAResourceProxy(ManagedConnection mc) {
-        this.mc = mc;
-    }
     
     /**
      * Commit the global transaction specified by xid.
@@ -71,20 +60,7 @@ public class XAResourceProxy extends AbstractXAResourceType {
      *            protocol to commit the work done on behalf of xid.
      */
     public void commit(Xid xid, boolean onePhase) throws XAException {
-        
-        
-        debugxid("Comitting outbound transaction with ID ", xid);
-        
-        try {
-            _getXAResource().commit(xid, onePhase);
-            debugxid("Comitted outbound transaction with ID ", xid);
-        } finally {
-            try {
-                mc._endXaTx();
-            } catch (Exception e) {
-                throw ExceptionUtils.newXAException(e);
-            }
-        }
+        xar.commit(savedXid(), onePhase);
     }
     
     /**
@@ -97,12 +73,25 @@ public class XAResourceProxy extends AbstractXAResourceType {
      *            One of TMSUCCESS, TMFAIL, or TMSUSPEND
      */
     public void end(Xid xid, int flags) throws XAException {
-        debug("Ending tx..." + convertFlag(flags));
-        debugxid("Ending outbound transaction with ID ", xid);
-        _getXAResource().end(xid, flags);
-        debugxid("Ended outbound transaction with ID ", xid);
-        
-        //mc.transactionCompleted();
+        if (beingRedelivered() == false ) {
+            xar.end(savedXid(), flags);
+            if (flags == XAResource.TMSUSPEND) {
+                suspended = true;
+            }
+            endCalled = true;
+        }
+    }
+    
+    /**
+     * When message is being redelivered, i.e, end is called
+     * and that too without TMSUSPEND flag, return true.
+     *
+     * This also assumes that, when the message is being
+     * redelivered, the MDB wouldnt be coded to such that
+     * transaction would need to be suspended.
+     */
+    private boolean beingRedelivered() {
+        return endCalled == true && suspended == false;
     }
     
     /**
@@ -113,7 +102,7 @@ public class XAResourceProxy extends AbstractXAResourceType {
      *            A global transaction identifier
      */
     public void forget(Xid xid) throws XAException {
-        _getXAResource().forget(xid);
+        xar.forget(savedXid());
     }
     
     /**
@@ -123,7 +112,7 @@ public class XAResourceProxy extends AbstractXAResourceType {
      * @return the transaction timeout value in seconds
      */
     public int getTransactionTimeout() throws XAException {
-        return _getXAResource().getTransactionTimeout();
+        return xar.getTransactionTimeout();
     }
     
     /**
@@ -141,18 +130,11 @@ public class XAResourceProxy extends AbstractXAResourceType {
         if (xares instanceof XAResourceType) {
             XAResourceType wrapper = (XAResourceType) xares;
             inxa = (XAResource) wrapper.getWrappedObject();
-            
-            if (!compare(wrapper)) {
-                debug("isSameRM returns(compare) : " + false);
-                
+            if (!compare(wrapper) ) {
                 return false;
             }
         }
-        
-        boolean result = _getXAResource().isSameRM(inxa);
-        debug("isSameRM returns : " + result);
-        
-        return result;
+        return xar.isSameRM(inxa);
     }
     
     /**
@@ -168,8 +150,7 @@ public class XAResourceProxy extends AbstractXAResourceType {
      *         in the prepare method.
      */
     public int prepare(Xid xid) throws XAException {
-        debugxid("Preparing transaction with ID ", xid);
-        return _getXAResource().prepare(xid);
+        return xar.prepare(savedXid());
     }
     
     /**
@@ -185,7 +166,7 @@ public class XAResourceProxy extends AbstractXAResourceType {
      *         <code>XAException</code>.
      */
     public Xid[] recover(int flag) throws XAException {
-        return _getXAResource().recover(flag);
+        return xar.recover(flag);
     }
     
     /**
@@ -196,18 +177,12 @@ public class XAResourceProxy extends AbstractXAResourceType {
      *            A global transaction identifier
      */
     public void rollback(Xid xid) throws XAException {
-        debugxid("Rolling back transaction with ID ", xid);
-        try {
-            _getXAResource().rollback(xid);
-            debugxid("Rolled back transaction with ID ", xid);
-        } finally {
-            try {
-                mc._endXaTx();
-            } catch (Exception e) {
-                throw ExceptionUtils.newXAException(e);
-            }
+        rolledback = true;
+        if (toRollback) {
+            xar.rollback(savedXid());
         }
     }
+    
     
     /**
      * Set the current transaction timeout value for this
@@ -219,7 +194,7 @@ public class XAResourceProxy extends AbstractXAResourceType {
      *         false.
      */
     public boolean setTransactionTimeout(int seconds) throws XAException {
-        return _getXAResource().setTransactionTimeout(seconds);
+        return xar.setTransactionTimeout(seconds);
     }
     
     /**
@@ -231,80 +206,47 @@ public class XAResourceProxy extends AbstractXAResourceType {
      * @return flags One of TMNOFLAGS, TMJOIN, or TMRESUME
      */
     public void start(Xid xid, int flags) throws XAException {
-        debug("Starting tx..." + convertFlag(flags));
-        debugxid("Starting outbound transaction with ID ", xid);
-        try {
-            
-            mc._startXaTx();
-        } catch (Exception e) {
-            XAException xae = new XAException();
-            xae.initCause(e);
-            throw xae;
+        if (beingRedelivered() ) {
+            return;
         }
-        _getXAResource().start(xid, flags);
-        debugxid("Started outbound transaction with ID ", xid);
-    }
-    
-    private XAResource _getXAResource() throws XAException {
-        try {
-            return this.mc._getXAResource();
-        } catch (Exception e) {
-            throw ExceptionUtils.newXAException(e);
+        int actualflag = flags;
+        if (this.savedxid == null) {
+            this.savedxid = xid;
+        } else if (flags == XAResource.TMNOFLAGS) {
+            if (rolledback){
+                rolledback = false;
+                endCalled = false;
+                if (suspended) {
+                    suspended = false;
+                    actualflag = XAResource.TMRESUME;
+                } else {
+                    actualflag = XAResource.TMJOIN;
+                }
+            }
+        } else if (flags == XAResource.TMRESUME) {
+            endCalled = false;
+            suspended = false;
         }
+        xar.start(savedXid(), actualflag);
     }
     
     public Object getWrappedObject() {
-        try {
-            return this.mc._getXAResource();
-        } catch (Exception e) {
-            throw ExceptionUtils.newRuntimeException(e);
-        }
+        return this.xar;
     }
     
-    String convertFlag(int i) {
-        if (i == XAResource.TMJOIN) {
-            return "TMJOIN";
-        }
-        
-        if (i == XAResource.TMNOFLAGS) {
-            return "TMNOFLAGS";
-        }
-        
-        if (i == XAResource.TMSUCCESS) {
-            return "TMSUCCESS";
-        }
-        
-        if (i == XAResource.TMSUSPEND) {
-            return "TMSUSPEND";
-        }
-        
-        if (i == XAResource.TMRESUME) {
-            return "TMRESUME";
-        }
-        
-        return "" + i;
+    public void setToRollback(boolean flag) {
+        toRollback = flag;
     }
-    public void startDelayedXA(){
-        
-        throw new UnsupportedOperationException();
-    }
+    
     public boolean endCalled() {
-        
-        throw new UnsupportedOperationException();
+        return endCalled;
     }
     
-    public void setToRollback(boolean rb)
-    {
-        throw new UnsupportedOperationException();
-    }
-    void debug(String s) {
-        logger.log(Level.FINEST,
-                "Managed Connection = " + mc + " XAResourceProxy" + s);
+    private Xid savedXid() {
+        return this.savedxid;
     }
     
-    void debugxid(String s, Xid xid) {
-        if (logger.getLevel() == Level.FINEST) {
-            logger.log(Level.FINEST, s + printXid(xid));
-        }
+    public void startDelayedXA(){
+        throw new UnsupportedOperationException();
     }
 }

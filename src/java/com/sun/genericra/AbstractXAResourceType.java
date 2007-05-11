@@ -32,6 +32,7 @@ import javax.jms.*;
 
 import javax.transaction.xa.Xid;
 
+import javax.transaction.xa.XAException;
 import javax.resource.ResourceException;
 import javax.resource.spi.ActivationSpec;
 import javax.resource.spi.BootstrapContext;
@@ -61,6 +62,21 @@ public abstract class AbstractXAResourceType implements XAResourceType,
      */
     public abstract Object getWrappedObject();
 
+    public abstract int prepare(Xid xid) throws XAException;
+    
+     public abstract void commit(Xid xid, boolean onePhase) throws XAException;
+     
+     public abstract void end(Xid xid, int flags) throws XAException;
+     
+     public abstract void rollback(Xid xid) throws XAException;
+     
+     public abstract void start(Xid xid, int flags) throws XAException ;
+     
+     public abstract void setToRollback(boolean flag);
+     
+     public abstract boolean endCalled();
+     
+     public abstract void startDelayedXA();
     /**
      * Set the physical jms connection object associated with
      * this XAResource wrapper

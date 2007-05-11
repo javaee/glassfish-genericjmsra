@@ -49,9 +49,7 @@ public class MessageListener implements javax.jms.MessageListener {
     }
 
     public void onMessage(Message message){
-        if (debug) {
-            _logger.log(Level.FINE, "Consuming the message :" + message);
-        }
+        _logger.log(Level.FINE, "Consuming the message :" + message);
         consumer.consumeMessage(message, jmsResource);
     }
 }
