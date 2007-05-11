@@ -18,7 +18,7 @@ import javax.jms.Message;
  * callback is called only once.
  *
  * @author Frank Kieviet
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public abstract class AckHandler {
     

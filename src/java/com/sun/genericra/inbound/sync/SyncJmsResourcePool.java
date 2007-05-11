@@ -120,7 +120,8 @@ public class SyncJmsResourcePool extends AbstractJmsResourcePool    {
                 XAConnectionFactory xacf = (XAConnectionFactory) consumer.getConnectionFactory();
                 _logger.log(Level.FINE, "Created CF ");
                 _logger.log(Level.FINE, "Creating XA Connection ");                
-                this.con = createXAConnection(xacf);                                             
+                this.con = createXAConnection(xacf);   
+                con.setClientID(consumer.getSpec().getClientID());
                 _logger.log(Level.FINE, "DMD connection factory " + consumer.getDmdConnectionFactory());
                 javax.jms.ConnectionFactory cf = (javax.jms.ConnectionFactory) consumer.getDmdConnectionFactory();
                 

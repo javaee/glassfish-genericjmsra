@@ -19,8 +19,8 @@
  */
 /*
  * $RCSfile: WMessageIn.java,v $
- * $Revision: 1.1 $
- * $Date: 2007-04-16 07:17:00 $
+ * $Revision: 1.2 $
+ * $Date: 2007-05-11 07:01:17 $
  *
  * Copyright 2003-2007 Sun Microsystems, Inc. All Rights Reserved.  
  */
@@ -41,7 +41,7 @@ import java.util.Enumeration;
  * method.
  * 
  * @author Frank Kieviet
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class WMessageIn implements Message {
     private Message mDelegate;
@@ -113,9 +113,8 @@ public class WMessageIn implements Message {
                 mAckHandler.ack(mIsRollbackOnly, this);
                 mIsAckCalled = true;
             }
-        } else {
-            mDelegate.acknowledge();
-        }
+        } 
+        mDelegate.acknowledge();
     }
 
     /**

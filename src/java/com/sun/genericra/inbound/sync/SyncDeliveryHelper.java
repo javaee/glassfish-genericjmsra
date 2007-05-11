@@ -14,6 +14,7 @@ import com.sun.genericra.inbound.*;
 import com.sun.genericra.AbstractXAResourceType;
 import com.sun.genericra.util.*;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 import java.util.logging.*;
 
@@ -52,6 +53,9 @@ public class SyncDeliveryHelper {
     boolean redeliveryFailed = false;
     Coordinator coord = null;
     boolean mHoldUntilAck;
+
+    int acktimeout;
+   
     
     public SyncDeliveryHelper(SyncJmsResource jmsResource,
             SyncJmsResourcePool pool) {
@@ -60,10 +64,15 @@ public class SyncDeliveryHelper {
         this.transacted = pool.isTransacted();
         
         mHoldUntilAck = this.spec.getHUAMode();
+        acktimeout = this.spec.getAckTimeOut();
         AbstractXAResourceType xarObject = null;
         
         if (redeliveryRequired()) {
-            xarObject = new InboundXAResourceProxy(jmsResource.getXAResource());
+            if (this.spec.getUseFirstXAForRedelivery()) {
+                xarObject = new FirstXAResourceProxy(jmsResource.getXAResource());
+            } else {
+                xarObject = new InboundXAResourceProxy(jmsResource.getXAResource());
+            }
         } else {
             xarObject = new SimpleXAResourceProxy(jmsResource.getXAResource());
             
@@ -101,14 +110,14 @@ public class SyncDeliveryHelper {
                 
                 
                 if (redeliveryRequired()) {
-                    InboundXAResourceProxy localXar = (InboundXAResourceProxy) this.xar;
+                    AbstractXAResourceType localXar = (AbstractXAResourceType) this.xar;
                     if (localXar.endCalled() == false) {
                         localXar.end(null, XAResource.TMSUCCESS);
                     }
                     localXar.prepare(null);
                     _logger.log(Level.FINE, "Prepared DMD transaction");
                 } else {
-                    SimpleXAResourceProxy localXar = (SimpleXAResourceProxy) this.xar;
+                    AbstractXAResourceType localXar = (AbstractXAResourceType) this.xar;
                     localXar.end(null, XAResource.TMSUCCESS);
                     localXar.prepare(null);
                     _logger.log(Level.FINE, "Prepared DMD transaction");
@@ -119,12 +128,12 @@ public class SyncDeliveryHelper {
                 msgProducer.send(this.msg);
                 _logger.log(Level.FINE, "Sent message to DMD");
                 if (redeliveryRequired()) {
-                    InboundXAResourceProxy localXar = (InboundXAResourceProxy) this.xar;
+                    AbstractXAResourceType localXar = (AbstractXAResourceType) this.xar;
                     localXar.commit(null, false);
                     _logger.log(Level.FINE, "Commited DMD transaction");
                     
                 } else {
-                    SimpleXAResourceProxy localXar = (SimpleXAResourceProxy) this.xar;
+                    AbstractXAResourceType localXar = (AbstractXAResourceType) this.xar;
                     localXar.commit(null, false);
                     _logger.log(Level.FINE, "Commited DMD transaction");
                 }
@@ -160,7 +169,7 @@ public class SyncDeliveryHelper {
                 _logger.log(Level.SEVERE, "FAILED : sending message to DMD");
             }else {
                 _logger.log(Level.SEVERE, "FAILED : sending message to DMD");
-                SimpleXAResourceProxy localXar = (SimpleXAResourceProxy) this.xar;
+                AbstractXAResourceType localXar = (AbstractXAResourceType) this.xar;
                 localXar.setToRollback(true);
                 try {
                     localXar.rollback(null);
@@ -192,10 +201,8 @@ public class SyncDeliveryHelper {
                 runOnceStdXA();
             } else {
                 runOnceStdNoXA();
-            }
-            
-            
-            
+            }           
+            _logger.log(Level.FINE,"Completed delivery ");
         } catch (Exception ee) {
             
             ee.printStackTrace();
@@ -232,7 +239,7 @@ public class SyncDeliveryHelper {
         int myattempts = 0;
         int attempts = this.spec.getRedeliveryAttempts();
         
-        InboundXAResourceProxy localXar = null;
+        AbstractXAResourceType localXar = null;
         Transaction tx = null;
         
         if (this.msg != null) {
@@ -241,30 +248,33 @@ public class SyncDeliveryHelper {
                 try {
                     coord = newCoord();
                     msg = mHoldUntilAck ? wrapMsg(msg, coord, -1) : msg;
-                    if (mHoldUntilAck){
+                    if (this.transacted){
                         tx = getTransaction(true);
+                        _logger.log(Level.FINE,"Got the transaction " + tx);
                     }
-                    deliverMessage(msg);
+                    deliverMessage(msg);                    
+                    _logger.log(Level.FINE,"Delivered the message");
                     if (redeliveryRequired()) {
                         
                     /*
                      * Make the XA rollback  enable.
                      *  This is because we will start the XA now.
                      */
-                        localXar =  (InboundXAResourceProxy) xar;
+                        localXar =  (AbstractXAResourceType) xar;
                         localXar.startDelayedXA();
                         localXar.setToRollback(true);
                     }
                     coord.msgDelivered(true);
                     break;
-                }catch (ResourceException r) {
+                }catch (ResourceException r) {                    
+                    _logger.log(Level.FINE,"Exception during Delivery, running redelivery logic");
                     if (redeliveryRequired()) {
                     /*
                      * Do not allow roll back here, because we know that
                      * the XA is not started, we start the XA only when delivery
                      * is successful, here delivery has failed.
                      */
-                        localXar =  (InboundXAResourceProxy) xar;
+                        localXar =  (AbstractXAResourceType) xar;
                         localXar.setToRollback(false);
                         try {
                             _logger.log(Level.FINE,
@@ -275,7 +285,7 @@ public class SyncDeliveryHelper {
                             ex.printStackTrace();
                         }
                     } else {
-                        SimpleXAResourceProxy simpleXar =  (SimpleXAResourceProxy) this.xar;
+                        AbstractXAResourceType simpleXar =  (AbstractXAResourceType) this.xar;
                         simpleXar.setToRollback(false);
                         coord.setRollbackOnly(r);
                     }
@@ -334,14 +344,19 @@ public class SyncDeliveryHelper {
             coord.waitForAcks();
             
             // If the transaction was moved to a different thread, take it back
-            if (mHoldUntilAck && getTransaction(true) == null) {
+            _logger.log(Level.FINE, "Is there a TX associated here " + getTransaction(true));
+            if (this.transacted && (getTransaction(true) == null)) {                
                 mTxMgr.getTransactionManager().resume(tx);
+                _logger.log(Level.FINE, "Resumed the transaction ");
             }
             
-            if (mHoldUntilAck && coord.isRollbackOnly()) {
+            if (this.transacted && coord.isRollbackOnly()) {
+                _logger.log(Level.FINE, "Setting to RollBack because coordinator was rollback");
                 getTransaction(true).setRollbackOnly();
-            }
+            }            
+            _logger.log(Level.FINE,"Releasing the Endpoint");
             this.jmsResource.releaseEndpoint();
+            _logger.log(Level.FINE,"Released the Endpoint");
         }
     }
     
@@ -444,7 +459,7 @@ public class SyncDeliveryHelper {
         
         public abstract void setNeedsToDiscardEndpoint();
         
-        public abstract int getNMsgsDelivered();
+        
     }
     
     private class NonHUACoordinator extends Coordinator {
@@ -484,11 +499,8 @@ public class SyncDeliveryHelper {
         
         public boolean needsToDiscardEndpoint() {
             return mNeedsToDiscardEndpoint;
-        }
-        
-        public int getNMsgsDelivered() {
-            return mNMsgsDelivered;
-        }
+        }       
+      
         
         public void setNeedsToDiscardEndpoint() {
             mNeedsToDiscardEndpoint = true;
@@ -516,9 +528,11 @@ public class SyncDeliveryHelper {
         
         public void ack(boolean isRollbackOnly, Message m) throws JMSException {
             if (isRollbackOnly) {
-                setRollbackOnly();
+                setRollbackOnly();               
+            _logger.log(Level.FINE, "Setting rollback only");
             }
             mSemaphore.release();
+            _logger.log(Level.FINE, "Released Semaphore here");
         }
         
         public synchronized boolean isRollbackOnly() {
@@ -533,30 +547,25 @@ public class SyncDeliveryHelper {
         }
         
         public void waitForAcks() throws InterruptedException {
-            done: for (int i = 0; i < mNAcksToExpect; i++) {
-                for (;;) {
-                    // TODO: find better way to wait both on stop signal and semaphore
-                    if (mSemaphore.tryAcquire(500)) {
-                        break;
-                    }
-                    // How can we find out if the receiver is stopped here
-                    
+            
+            _logger.log(Level.FINE, "Tying to acquire a semaphore");
+                if (!mSemaphore.tryAcquire(acktimeout ,TimeUnit.SECONDS)){                
+                    _logger.log(Level.FINE, "Acquired");
+			setRollbackOnly();
+		}
+		/*
                     if (jmsResource.getIsWorkStopped()) {
                         setRollbackOnly();
-                        break done;
+		 	return;
                     }
-                    
-                }
-            }
+		*/
         }
         
         public boolean needsToDiscardEndpoint() {
             return mNeedsToDiscardEndpoint;
         }
         
-        public int getNMsgsDelivered() {
-            return mNMsgsDelivered;
-        }
+       
         
         public void setNeedsToDiscardEndpoint() {
             mNeedsToDiscardEndpoint = true;

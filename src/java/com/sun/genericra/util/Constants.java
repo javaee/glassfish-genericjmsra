@@ -67,6 +67,8 @@ public final class Constants {
      * String indicating a durable
      */
     public static final String DURABLE = "Durable";
+    
+    public static int DEFAULT_ACK_TIMEOUT = 2;
 
     /**
      * String indicating a non-durable

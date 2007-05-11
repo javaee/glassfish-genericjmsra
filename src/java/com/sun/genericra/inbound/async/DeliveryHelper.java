@@ -63,7 +63,13 @@ public class DeliveryHelper {
         AbstractXAResourceType xarObject = null;
         
         if (redeliveryRequired()) {
-            xarObject = new InboundXAResourceProxy(jmsResource.getXAResource());
+            if (this.spec.getUseFirstXAForRedelivery()) {                
+		_logger.log(Level.FINE,"Using First XA redelivery logic");
+                xarObject = new FirstXAResourceProxy(jmsResource.getXAResource());
+            } else {
+		_logger.log(Level.FINE,"Using Inbound XA redelivery logic");
+                xarObject = new InboundXAResourceProxy(jmsResource.getXAResource());
+            }
         } else {
             xarObject = new SimpleXAResourceProxy(jmsResource.getXAResource());
             
@@ -101,14 +107,14 @@ public class DeliveryHelper {
                 
                 
                 if (redeliveryRequired()) {
-                    InboundXAResourceProxy localXar = (InboundXAResourceProxy) this.xar;
+                    AbstractXAResourceType localXar = (AbstractXAResourceType) this.xar;
                     if (localXar.endCalled() == false) {
                         localXar.end(null, XAResource.TMSUCCESS);
                     }
                     localXar.prepare(null);
                     _logger.log(Level.FINE, "Prepared DMD transaction");
                 } else {
-                    SimpleXAResourceProxy localXar = (SimpleXAResourceProxy) this.xar;
+                    AbstractXAResourceType localXar = (AbstractXAResourceType) this.xar;
                     localXar.end(null, XAResource.TMSUCCESS);
                     localXar.prepare(null);
                     _logger.log(Level.FINE, "Prepared DMD transaction");
@@ -119,12 +125,12 @@ public class DeliveryHelper {
                 msgProducer.send(this.msg);
                 _logger.log(Level.FINE, "Sent message to DMD");
                 if (redeliveryRequired()) {
-                    InboundXAResourceProxy localXar = (InboundXAResourceProxy) this.xar;
+                    AbstractXAResourceType localXar = (AbstractXAResourceType) this.xar;
                     localXar.commit(null, false);
                     _logger.log(Level.FINE, "Commited DMD transaction");
                     
                 } else {
-                    SimpleXAResourceProxy localXar = (SimpleXAResourceProxy) this.xar;
+                    AbstractXAResourceType localXar = (AbstractXAResourceType) this.xar;
                     localXar.commit(null, false);
                     _logger.log(Level.FINE, "Commited DMD transaction");
                 }
@@ -160,7 +166,7 @@ public class DeliveryHelper {
                 _logger.log(Level.SEVERE, "FAILED : sending message to DMD");
             }else {
                 _logger.log(Level.SEVERE, "FAILED : sending message to DMD");
-                SimpleXAResourceProxy localXar = (SimpleXAResourceProxy) this.xar;
+                AbstractXAResourceType localXar = (AbstractXAResourceType) this.xar;
                 localXar.setToRollback(true);
                 try {
                     localXar.rollback(null);
@@ -190,7 +196,7 @@ public class DeliveryHelper {
         int myattempts = 0;
         int attempts = this.spec.getRedeliveryAttempts();
         
-        InboundXAResourceProxy localXar = null;
+        AbstractXAResourceType localXar = null;
         while (true) {
             try {
                 deliverMessage(msg);
@@ -201,7 +207,7 @@ public class DeliveryHelper {
                      * Make the XA rollback  enable.
                      *  This is because we will start the XA now.
                      */
-                    localXar =  (InboundXAResourceProxy) xar;
+                    localXar =  (AbstractXAResourceType) xar;
                     localXar.startDelayedXA();
                     localXar.setToRollback(true);
                 }
@@ -214,7 +220,7 @@ public class DeliveryHelper {
                      * the XA is not started, we start the XA only when delivery
                      * is successful, here delivery has failed.
                      */
-                    localXar =  (InboundXAResourceProxy) xar;
+                    localXar =  (AbstractXAResourceType) xar;
                     localXar.setToRollback(false);
                     try {
                         _logger.log(Level.FINE,
@@ -225,7 +231,7 @@ public class DeliveryHelper {
                         ex.printStackTrace();
                     }
                 } else {
-                    SimpleXAResourceProxy simpleXar =  (SimpleXAResourceProxy) this.xar;
+                    AbstractXAResourceType simpleXar =  (AbstractXAResourceType) this.xar;
                     simpleXar.setToRollback(false);
                 }
                 if (transacted) {

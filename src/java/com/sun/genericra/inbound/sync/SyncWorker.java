@@ -94,10 +94,13 @@ public class SyncWorker implements Work {
                 sessionid);
         for (;;) {
             try {
+		//_logger.log(Level.FINEST,"Running Receiver #" + sessionid);
                 if (requiresrefresh) {
+		_logger.log(Level.FINE,"Refreshing Receiver #" + sessionid);
                     this.resource.refreshListener();
                     this.resource.refresh();
                     requiresrefresh = false;
+		_logger.log(Level.FINE,"Refresed Receiver #" + sessionid);
                 }
                 Message m = mReceiver.receive(TIMEOUT);
                 if (m != null) {
@@ -112,6 +115,7 @@ public class SyncWorker implements Work {
                      * do the needful to the inbound message (commit/rollback).
                      */
                     helper.deliver(m, this.resource.getPool().getConsumer().getDmdDestination());
+		_logger.log(Level.FINE,"Delivered message Receiver #" + sessionid);
                 }else {
                     requiresrefresh = false;
                 }
@@ -163,6 +167,7 @@ public class SyncWorker implements Work {
          * a closed thread, so this thread should be alive for the duration of
          * the consumer
          */
+        this.resource.releaseEndpoint();
          _logger.log(Level.FINE, "Closing the receiver from run #" + sessionid);
         close();
     }

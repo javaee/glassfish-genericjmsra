@@ -159,7 +159,9 @@ public class GenericJMSRAProperties implements ResourceAdapterAssociation,
         
     private String deliveryType;
     
-    private String deliveryConcurrencyMode;
+    private String deliveryConcurrencyMode;    
+    
+    private Boolean usefirstxaforredelivery = null;
     /**
      * Sets the connection factory class name.
      *
@@ -650,6 +652,35 @@ public class GenericJMSRAProperties implements ResourceAdapterAssociation,
     public boolean getMonitoring() {
         return enableMonitoring;
     }
+
+   /**
+     * Gets the redelivery logic .
+	*
+     * @return	logic.
+	*/
+    public boolean getUseFirstXAForRedelivery() {
+	if (this.usefirstxaforredelivery != null) {
+		return this.usefirstxaforredelivery.booleanValue();
+	} else if ((raprops != null) && (raprops.usefirstxaforredelivery != null)) {
+		return raprops.usefirstxaforredelivery.booleanValue();
+	} else {
+            return false;
+	}
+    }
+
+   /**
+     * Sets the redelivery logic, for some providers like MQseries the XA
+     *	start cannot be delayed, so we need to set this to true.
+     *
+     * @param connectionFactoryClassName
+     */
+
+    public void setUseFirstXAForRedelivery (
+	boolean usefirstxa) {
+	logger.log(Level.FINEST,
+		"setUseFirstXAForRedelivery " + usefirstxa);
+	usefirstxaforredelivery = Boolean.valueOf(usefirstxa);
+    }
     
     /**
      * Overides the equals method of object.
@@ -733,6 +764,7 @@ public class GenericJMSRAProperties implements ResourceAdapterAssociation,
             "},";
         s = s + "{SupportsXA = " + getSupportsXA() + "},";
         s = s + "{DeliveryType = " + getDeliveryType() + "},";
+	s = s + "{UseFirstXAForRedelivery = " + getUseFirstXAForRedelivery() + "},";
         return s;
     }
 

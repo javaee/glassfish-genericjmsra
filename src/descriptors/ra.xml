@@ -113,7 +113,12 @@
         <config-property>
             <config-property-name>DeliveryType</config-property-name>
             <config-property-type>java.lang.String</config-property-type>
+        </config-property>         
+        <config-property>
+            <config-property-name>UseFirstXAForRedelivery</config-property-name>
+            <config-property-type>java.lang.String</config-property-type>
         </config-property> 
+        
         <!-- @todo: check if all MCF props are listed correctly -->
         <outbound-resourceadapter>
             <connection-definition>

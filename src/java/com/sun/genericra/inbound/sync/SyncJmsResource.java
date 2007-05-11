@@ -166,11 +166,14 @@ public class SyncJmsResource extends AbstractJmsResource {
         try {
             if (this.endPoint != null) {
                 this.endPoint.afterDelivery();
+                _logger.log(Level.FINE,"After Delivery success in SyncJmsResource");
             }
         } catch (Exception re) {
             _logger.log(Level.SEVERE, "After delivery failed in resource #" + sessionid
                         + re.getMessage());
         } finally {
+            this.release();
+            /*
             if (this.endPoint != null) {
                 try {
                     this.endPoint.release();
@@ -182,6 +185,21 @@ public class SyncJmsResource extends AbstractJmsResource {
                 }                
                 this.endPoint = null;
             }
+             */
         }
+    }
+    
+    public void release() {
+            if (this.endPoint != null) {
+                try {
+                    this.endPoint.release();
+                    _logger.log(Level.FINE, "SyncJmsResource: released endpoint in #" 
+                            + sessionid);
+                } catch (Exception e) {
+                    _logger.log(Level.SEVERE,
+                            "SyncJmsResource: release endpoint failed #" + sessionid);                    
+                }                
+                this.endPoint = null;
+            }        
     }
 }

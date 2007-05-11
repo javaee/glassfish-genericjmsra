@@ -78,7 +78,7 @@ public class ActivationSpec extends GenericJMSRAProperties
     /*Sync consumer props*/
     private int batchSize = 1;
     private boolean huaMode = false;
-    
+    private int ackTimeOut = Constants.DEFAULT_ACK_TIMEOUT;
     
     private StringManager sm = StringManager.getManager(GenericJMSRA.class);
 
@@ -465,5 +465,13 @@ public class ActivationSpec extends GenericJMSRAProperties
     
     public boolean getHUAMode() {
         return huaMode;
+    }
+    
+    public void setAckTimeOut(int timeout) {
+        ackTimeOut = timeout;
+    }
+    
+    public int getAckTimeOut() {
+        return ackTimeOut;
     }
 }
