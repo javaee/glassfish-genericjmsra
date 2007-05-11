@@ -124,16 +124,10 @@ public class DeliveryHelper {
                 msgProducer = createProducer(connection, this.dest);
                 msgProducer.send(this.msg);
                 _logger.log(Level.FINE, "Sent message to DMD");
-                if (redeliveryRequired()) {
-                    AbstractXAResourceType localXar = (AbstractXAResourceType) this.xar;
-                    localXar.commit(null, false);
-                    _logger.log(Level.FINE, "Commited DMD transaction");
-                    
-                } else {
-                    AbstractXAResourceType localXar = (AbstractXAResourceType) this.xar;
-                    localXar.commit(null, false);
-                    _logger.log(Level.FINE, "Commited DMD transaction");
-                }
+                AbstractXAResourceType localXar = (AbstractXAResourceType) this.xar;
+                localXar.commit(null, false);
+                _logger.log(Level.FINE, "Commited DMD transaction");
+           
                 /**
                  * We know that if commit/prepare fails we may have
                  * the message in the DMD, the message would be present in
