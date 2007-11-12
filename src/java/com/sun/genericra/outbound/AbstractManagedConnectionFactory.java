@@ -253,8 +253,9 @@ public abstract class AbstractManagedConnectionFactory extends GenericJMSRAPrope
         //debug("equals" + obj);
         
         //XXX: enhance
-        if(!(super.equals(obj))) return false;
         if (obj == null) return false;
+        if(!(super.equals(obj))) return false;
+        //if (obj == null) return false;
         if (!(obj instanceof AbstractManagedConnectionFactory)) return false; 
         debug("equals - no false yet");
 

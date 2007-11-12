@@ -208,6 +208,8 @@ public class GenericJMSRAProperties implements ResourceAdapterAssociation, Seria
         if (this.supportsXA != null) {
             return this.supportsXA.booleanValue();
         } else if (raprops != null) {
+            if( raprops.supportsXA == null)
+                return false;
             return raprops.supportsXA.booleanValue();
         } else {
             return false;
