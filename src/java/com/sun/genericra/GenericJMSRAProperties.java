@@ -77,6 +77,20 @@ public class GenericJMSRAProperties implements ResourceAdapterAssociation, Seria
     private String cfProperties;
     private GenericJMSRAProperties raprops;
 
+    //START CR 6604707
+    /**
+     * These values are used to control the message consumption during
+     * MDB deployment. Untill all the MDB deployment is successfull
+     * Message consumption is not allowed. These 2 parameters helps
+     * in pausing message consumption till the completion of MDB deployment
+     * in case of failures in one of the MDB then other MDBs are not allowed to      * consume the message.
+     * value -1 indicates these are not configured either while creating 
+     * resource adpter config or in activation config for the beans.
+    **/
+    private int mDBDeploymentRetryAttempt = -1;
+    private int mDBDeploymentRetryInterval = -1;
+    //END CR 6604707
+
     public void setConnectionFactoryClassName(String className) {
         logger.log(Level.FINEST, "setConnectionFactoryClassName :" + className);
         this.cfClassName = className;
@@ -350,7 +364,42 @@ public class GenericJMSRAProperties implements ResourceAdapterAssociation, Seria
                                   topicConnectionFactoryClassName);
         xATopicConnectionFactoryClassName = topicConnectionFactoryClassName;
     }    
+   
+    //START CR 6604707 
+
+    public int getMDBDeploymentRetryAttempt() {
+        if(mDBDeploymentRetryAttempt != -1)
+            return mDBDeploymentRetryAttempt;
+        else if(raprops != null)
+            return raprops.getMDBDeploymentRetryAttempt();
+        else
+            return 5; //default value
+    }
     
+    public void setMDBDeploymentRetryAttempt(int retryAttempt) {
+         
+        logger.log(Level.FINEST, "setMDBDeploymentRetryAttempt " + 
+                                     retryAttempt);
+        mDBDeploymentRetryAttempt = retryAttempt;
+    }
+    
+    public int getMDBDeploymentRetryInterval() {
+        if(mDBDeploymentRetryInterval != -1)
+            return mDBDeploymentRetryInterval; 
+        else if(raprops != null)
+            return raprops.getMDBDeploymentRetryInterval();
+        else
+            return 1000;//default value
+    }
+   
+    public void setMDBDeploymentRetryInterval(int retryInterval) {
+        logger.log(Level.FINEST, "setMDBDeploymentRetryInterval " + 
+                                                      retryInterval);
+         mDBDeploymentRetryInterval = retryInterval;
+    }
+
+   //END CR 6604707
+
     public boolean equals(Object o){
         if(o == null) return false;
         if (!(o instanceof GenericJMSRAProperties)) return false;

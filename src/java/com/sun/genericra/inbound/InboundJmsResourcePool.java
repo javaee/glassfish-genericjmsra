@@ -23,6 +23,8 @@ import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import com.sun.genericra.GenericJMSRA;
+import javax.resource.spi.*;
+import javax.resource.spi.endpoint.*;
 import com.sun.genericra.util.*;
 
 /**
@@ -242,6 +244,46 @@ public class InboundJmsResourcePool implements ServerSessionPool {
             String msg = sm.getString("serversession_pool_destroyed");
             throw new JMSException (msg);
         }
+        int retry = this.getConsumer().getSpec().getMDBDeploymentRetryAttempt();
+        long retryInterval = this.getConsumer().getSpec().
+                                          getMDBDeploymentRetryInterval();
+        boolean failed = false;
+        MessageEndpoint endPoint = null;
+        while(retry > 0) {
+           failed = false;
+           retry--;
+           try {
+               //create dummy end point to check if mdb deployment is
+               //completed or some error occurred.
+               MessageEndpointFactory mef = getConsumer().getMessageEndpointFactory();
+               endPoint = mef.createEndpoint(null);
+               break;
+           } catch(UnavailableException ue) {
+                   failed = true;
+           } catch(Throwable t) {
+                   //throwable may not be thrown but as safeguard I added this
+                   //since I am passing null object for createEndpoint.
+           }
+           if (destroyed) {
+                String msg = sm.getString("serversession_pool_destroyed");
+                throw new JMSException (msg);
+           }
+           try {
+                Thread.sleep(retryInterval);
+           } catch(Exception e) {
+                  //ignore it
+           }
+       }
+       try {
+           if(endPoint != null )
+               endPoint.release();
+
+       } catch(Exception e) {
+           //ignore
+       }
+       if(failed)
+           throw new JMSException(
+                       "Application not yet deployed or deployment failed.");
     }
 
     private synchronized InboundJmsResource _getServerSession() throws JMSException {
