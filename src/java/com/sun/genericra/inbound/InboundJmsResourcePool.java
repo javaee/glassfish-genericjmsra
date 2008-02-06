@@ -43,6 +43,7 @@ public class InboundJmsResourcePool implements ServerSessionPool {
     private ConnectionFactory cf = null;
     private boolean transacted = false;
     private boolean destroyed = false;
+    private boolean deploymentCompleted = false;
     private boolean stopped = false;
     private LinkedList waitQ = null;
     private long TIME_OUT = 180 * 1000;
@@ -244,6 +245,8 @@ public class InboundJmsResourcePool implements ServerSessionPool {
             String msg = sm.getString("serversession_pool_destroyed");
             throw new JMSException (msg);
         }
+        if(deploymentCompleted)
+            return;
         int retry = this.getConsumer().getSpec().getMDBDeploymentRetryAttempt();
         long retryInterval = this.getConsumer().getSpec().
                                           getMDBDeploymentRetryInterval();
@@ -255,8 +258,10 @@ public class InboundJmsResourcePool implements ServerSessionPool {
            try {
                //create dummy end point to check if mdb deployment is
                //completed or some error occurred.
+               Thread.sleep(retryInterval);
                MessageEndpointFactory mef = getConsumer().getMessageEndpointFactory();
                endPoint = mef.createEndpoint(null);
+               deploymentCompleted = true;
                break;
            } catch(UnavailableException ue) {
                    failed = true;
@@ -268,11 +273,6 @@ public class InboundJmsResourcePool implements ServerSessionPool {
                 String msg = sm.getString("serversession_pool_destroyed");
                 throw new JMSException (msg);
            }
-           try {
-                Thread.sleep(retryInterval);
-           } catch(Exception e) {
-                  //ignore it
-           }
        }
        try {
            if(endPoint != null )
@@ -281,9 +281,11 @@ public class InboundJmsResourcePool implements ServerSessionPool {
        } catch(Exception e) {
            //ignore
        }
-       if(failed)
+       if(failed) {
+           _logger.log(Level.FINER, "Application not yet deployed or deployment failed.\n Use properties MDBDeploymentRetryAttempt & MDBDeploymentRetryInterval for tuning MDB deployment");
            throw new JMSException(
                        "Application not yet deployed or deployment failed.");
+       }
     }
 
     private synchronized InboundJmsResource _getServerSession() throws JMSException {

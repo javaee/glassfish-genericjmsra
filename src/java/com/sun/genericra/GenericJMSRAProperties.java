@@ -389,7 +389,7 @@ public class GenericJMSRAProperties implements ResourceAdapterAssociation, Seria
         else if(raprops != null)
             return raprops.getMDBDeploymentRetryInterval();
         else
-            return 1000;//default value
+            return 15;//default value
     }
    
     public void setMDBDeploymentRetryInterval(int retryInterval) {
