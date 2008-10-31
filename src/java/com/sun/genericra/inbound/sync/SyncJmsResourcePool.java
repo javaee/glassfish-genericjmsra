@@ -137,13 +137,13 @@ public class SyncJmsResourcePool extends AbstractJmsResourcePool    {
                     this.dmdCon = createDmdConnection(cf);
                 }
             } else {
-                if (!(consumer.getConnectionFactory() instanceof ConnectionFactory)) {
+                if (!(consumer.getConnectionFactory() instanceof javax.jms.ConnectionFactory)) {
                     String msg = sm.getString("classtype_not_correct",
                             consumer.getConnectionFactory().getClass().getName());
                     throw new ResourceException(msg);
                 }
                 
-                cf = (ConnectionFactory) consumer.getConnectionFactory();
+                cf = (javax.jms.ConnectionFactory) consumer.getConnectionFactory();
                 this.con = createConnection(cf);
                 con.setClientID(consumer.getSpec().getClientID());
             }
