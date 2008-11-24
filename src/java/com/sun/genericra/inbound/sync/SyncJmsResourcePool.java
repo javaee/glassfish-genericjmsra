@@ -128,8 +128,11 @@ public class SyncJmsResourcePool extends AbstractJmsResourcePool    {
                 XAConnectionFactory xacf = (XAConnectionFactory) consumer.getConnectionFactory();
                 _logger.log(Level.FINE, "Created CF ");
                 _logger.log(Level.FINE, "Creating XA Connection ");                
-                this.con = createXAConnection(xacf);   
-                con.setClientID(consumer.getSpec().getClientID());
+                this.con = createXAConnection(xacf);
+                String clientID = consumer.getSpec().getClientID();
+                //Set the clientID only if it is not null
+                if (clientID != null && !"".equals(clientID))
+                    con.setClientID(clientID);
                 _logger.log(Level.FINE, "DMD connection factory " + consumer.getDmdConnectionFactory());
                 javax.jms.ConnectionFactory cf = (javax.jms.ConnectionFactory) consumer.getDmdConnectionFactory();
                 
@@ -145,7 +148,10 @@ public class SyncJmsResourcePool extends AbstractJmsResourcePool    {
                 
                 cf = (javax.jms.ConnectionFactory) consumer.getConnectionFactory();
                 this.con = createConnection(cf);
-                con.setClientID(consumer.getSpec().getClientID());
+                String clientID = consumer.getSpec().getClientID();
+                 //Set the clientID only if it is not null
+                if (clientID != null && !"".equals(clientID))
+                    con.setClientID(clientID);
             }
             try {
                 for (int i = 0; i < mSessions; i++) {
