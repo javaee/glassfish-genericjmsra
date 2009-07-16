@@ -289,11 +289,10 @@ public abstract class AbstractManagedConnectionFactory
     public boolean equals(Object obj) {
         //debug("equals" + obj);
         //XXX: enhance
-        if (!(super.equals(obj))) {
+        if (obj == null) {
             return false;
         }
-
-        if (obj == null) {
+        if (!(super.equals(obj))) {
             return false;
         }
 

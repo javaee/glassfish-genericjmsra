@@ -25,7 +25,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.jms.*;
-
+import com.sun.genericra.GenericJMSRA;
+import javax.resource.spi.*;
+import javax.resource.spi.endpoint.*;
 import javax.resource.ResourceException;
 
 import javax.transaction.xa.XAResource;
@@ -42,6 +44,7 @@ public class InboundJmsResourcePool extends AbstractJmsResourcePool implements S
         _logger = LogUtils.getLogger();
     }
 
+    private boolean deploymentCompleted = false;
     private ArrayList resources;
     private int maxSize;
     private int connectionsInUse = 0;
@@ -220,6 +223,49 @@ public class InboundJmsResourcePool extends AbstractJmsResourcePool implements S
             String msg = sm.getString("serversession_pool_destroyed");
             throw new JMSException(msg);
         }
+        if(deploymentCompleted)
+            return;
+        int retry = this.getConsumer().getSpec().getMDBDeploymentRetryAttempt();
+        long retryInterval = this.getConsumer().getSpec().
+                                          getMDBDeploymentRetryInterval();
+        boolean failed = false;
+        MessageEndpoint endPoint = null;
+        while(retry > 0) {
+           failed = false;
+           retry--;
+           try {
+               //create dummy end point to check if mdb deployment is
+               //completed or some error occurred.
+               Thread.sleep(retryInterval);
+               MessageEndpointFactory mef = getConsumer().getMessageEndpointFactory();
+               endPoint = mef.createEndpoint(null);
+               deploymentCompleted = true;
+               break;
+           } catch(UnavailableException ue) {
+                   failed = true;
+           } catch(Throwable t) {
+                   //throwable may not be thrown but as safeguard I added this
+                   //since I am passing null object for createEndpoint.
+           }
+           if (destroyed) {
+                String msg = sm.getString("serversession_pool_destroyed");
+                throw new JMSException (msg);
+           }
+       }
+       try {
+           if(endPoint != null )
+               endPoint.release();
+
+       } catch(Exception e) {
+           //ignore
+       }
+       if(failed) {
+           _logger.log(Level.FINER, "Application not yet deployed or" +
+             " deployment failed.\n Use properties MDBDeploymentRetryAttempt" +
+              " & MDBDeploymentRetryInterval for tuning MDB deployment");
+           throw new JMSException(
+                       "Application not yet deployed or deployment failed.");
+       }
     }
 
     private synchronized InboundJmsResource _getServerSession()
