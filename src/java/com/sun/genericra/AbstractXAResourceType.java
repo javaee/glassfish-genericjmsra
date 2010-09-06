@@ -16,31 +16,12 @@
  */
 package com.sun.genericra;
 
-import com.sun.genericra.util.*;
-
-import java.io.Serializable;
-
-import java.lang.reflect.Method;
-
-import java.security.*;
-
-import java.util.*;
-import java.util.logging.*;
-
-import javax.jms.*;
-
+import javax.jms.Connection;
+import javax.transaction.xa.XAException;
+import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 
-import javax.transaction.xa.XAException;
-import javax.resource.ResourceException;
-import javax.resource.spi.ActivationSpec;
-import javax.resource.spi.BootstrapContext;
-import javax.resource.spi.ResourceAdapter;
-import javax.resource.spi.ResourceAdapterInternalException;
-import javax.resource.spi.endpoint.MessageEndpointFactory;
-import javax.resource.spi.work.WorkManager;
-
-import javax.transaction.xa.XAResource;
+import com.sun.genericra.inbound.InboundXAResourceProxy;
 
 
 /**
@@ -105,22 +86,39 @@ public abstract class AbstractXAResourceType implements XAResourceType,
         return this.rmPolicy;
     }
 
-    /**
-     * If any one of the resources are configured with
-     * a policy of "OneForPhysicalConnection", then
-     * compare physical connection. Otherwise, return true
-     * so that the actual XAResource wrapper can delegate it
-     * to the underlying XAResource implementation.
-     */
-    public boolean compare(XAResourceType type) {
-        String rmPerMc = GenericJMSRAProperties.ONE_PER_PHYSICALCONNECTION;
 
+    /**
+     * Decide whether to override the underlying XAResource's implementation of isSameRM() 
+     * so that it returns false.
+     * 
+     * If the decision can be delegated to the underlying XAResourceImplementations,
+     * return true.
+     * 
+     * If this isSameRM() must return false, return false.
+     */
+    public boolean compare(XAResourceType other) {
+    	
+    	// Issue 40
+    	// If one of the resources is a InboundXAResourceProxy then isSameRM() must always return false here
+    	// This is because InboundXAResourceProxy delays the call to start() on the first resource
+    	// If isSameRM() returned true, then start(join) would be called on the second resource
+    	// before (start,noflags) is called on the first resource, which would cause an error
+    	if (this instanceof InboundXAResourceProxy || other instanceof InboundXAResourceProxy){
+    		return false;
+    	}
+    	
+        // If any one of the resources are configured with
+        // a policy of "OneForPhysicalConnection", then
+        // compare physical connection. Otherwise, return true
+        // so that the actual XAResource wrapper can delegate it
+        // to the underlying XAResource implementation.
+        String rmPerMc = GenericJMSRAProperties.ONE_PER_PHYSICALCONNECTION;
         if (rmPerMc.equalsIgnoreCase(rmPolicy) ||
-                rmPerMc.equalsIgnoreCase(type.getRMPolicy())) {
-            return type.getConnection().equals(getConnection());
-        } else {
-            return true;
+                rmPerMc.equalsIgnoreCase(other.getRMPolicy())) {
+            return other.getConnection().equals(getConnection());
         }
+        
+        return true;
     }
     
    /**

@@ -1,5 +1,5 @@
 /**
- * Copyright 2004-2005 Sun Microsystems, Inc.
+ * Copyright 2004-2010 Sun Microsystems, Inc.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,29 +16,7 @@
  */
 package com.sun.genericra;
 
-import com.sun.genericra.inbound.async.EndpointConsumer;
-import com.sun.genericra.util.*;
-
-import java.io.Serializable;
-
-import java.lang.reflect.Method;
-
-import java.security.*;
-
-import java.util.*;
-import java.util.logging.*;
-
-import javax.jms.*;
-
-import javax.resource.ResourceException;
-import javax.resource.spi.ActivationSpec;
-import javax.resource.spi.BootstrapContext;
-import javax.resource.spi.ResourceAdapter;
-import javax.resource.spi.ResourceAdapterInternalException;
-import javax.resource.spi.endpoint.MessageEndpointFactory;
-import javax.resource.spi.work.WorkManager;
-
-import javax.transaction.xa.XAResource;
+import javax.jms.Connection;
 
 
 /**
@@ -63,13 +41,15 @@ public interface XAResourceType {
     public String getRMPolicy();
 
     /**
-     * If any one of the resources are configured with
-     * a policy of "OneForPhysicalConnection", then
-     * compare physical connection. Otherwise, return true
-     * so that the actual XAResource wrapper can delegate it
-     * to the underlying XAResource implementation.
+     * Decide whether to override the underlying XAResource's implementation of isSameRM() 
+     * so that it returns false.
+     * 
+     * If the decision can be delegated to the underlying XAResourceImplementations,
+     * return true.
+     * 
+     * If this isSameRM() must return false, return false.
      */
-    public boolean compare(XAResourceType type);
+    public boolean compare(XAResourceType other);
 
     /**
      * Retrieves the physical JMS connection object.
