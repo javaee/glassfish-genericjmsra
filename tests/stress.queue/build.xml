@@ -1,10 +1,5 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 
-<!DOCTYPE project [
-<!ENTITY commonSetup SYSTEM "file:../../config/properties.xml">
-<!ENTITY commonBuild SYSTEM "file:../../config/common.xml">
-<!ENTITY testproperties SYSTEM "file:./build.properties">
-]>
 <!--
  * Copyright 2004-2005 Sun Microsystems, Inc.
  *
@@ -22,13 +17,13 @@
  *  limitations under the License.
 -->
 
-<project name="simplestressApp" default="usage" basedir=".">
+<project name="stress.queue" default="usage" basedir=".">
 
-    &commonSetup;
-    &commonBuild;
-    &testproperties;
+	<import file="../common/properties.xml"/>
+	<import file="../common/common.xml"/>
+	<property file="build.properties"/>   
 
-    <target name="all" depends="build,setup,deploy,run,undeploy,unsetup"/>
+    <target name="all" depends="clean,build,setup,deploy,run,undeploy,unsetup"/>
     <target name="run-test" depends="build,deploy,run,undeploy"/>
 
     <target name="clean" depends="init-common">
@@ -37,8 +32,14 @@
  
     <target name="compile" depends="clean">
         <antcall target="compile-common">
+            <param name="src" value="../common/ejb"/>
+        </antcall> 
+        <antcall target="compile-common">
             <param name="src" value="ejb"/>
-        </antcall>
+        </antcall> 
+        <antcall target="compile-common">
+            <param name="src" value="../common/client"/>
+        </antcall>    	
         <antcall target="compile-common">
             <param name="src" value="client"/>
         </antcall>
@@ -47,43 +48,59 @@
     <target name="build" depends="compile">
         <antcall target="build-ear-common">
             <param name="ejbjar.classes" 
-              value="**/*Bean*.class" />
+                value="**/ejb/*.class" />  
             <param name="appclientjar.classes" 
-              value="**/*Client*.class" />
+              value="**/client/*.class" />   	
         </antcall>
     </target> 
     
-    <target name="setup" depends="init-common">
+    <target name="setup" depends="check-genericra.jmsimpl.id,init-common">
+    	
+		<!-- select the appropriate string for this provider -->
+		<propertycopy property="connector.pool.property" from="${genericra.jmsimpl.id}.connector.pool.property"/>
+    	
 		<antcall target="create-connector-connpool">
 			<param name="ra.name" value="genericra"/>
 			<param name="connection.defname" value="javax.jms.QueueConnectionFactory"/>
 			<param name="connector.conpool.name" value="qcpool"/>
+			<param name="connector.pool.property" value="${connector.pool.property}"/>
 		</antcall>
+    	
 		<antcall target="create-connector-resource-common">
 			<param name="connector.conpool.name" value="qcpool"/>
 			<param name="connector.jndi.name" value="jms/QCFactory"/>
 		</antcall>	
+    	
+    	
 		<antcall target="create-jms-dest">
-			<param name="dest.name" value="PhysicalRxQueue"/>
+			<param name="dest.name" value="inboundQueue"/>
 			<param name="dest.type" value="queue"/>
 		</antcall>	
-
+    	
+		<!-- select the appropriate string for this provider -->
+		<propertycopy property="inbound.adminobject.property" from="${genericra.jmsimpl.id}.inbound.adminobject.property"/>
+    	
 		<antcall target="create-admin-object-common">
 			<param name="adminobject.raname" value="genericra"/>
 			<param name="adminobject.restype" value="javax.jms.Queue"/>
-			<param name="adminobject.property" value="DestinationProperties=imqDestinationName\=PhysicalRxQueue"/>
-			<param name="adminobject.jndiname" value="jms/ReceiverQueue "/>
+			<param name="adminobject.property" value="${inbound.adminobject.property}"/>
+			<param name="adminobject.jndiname" value="jms/inboundQueue "/>
 		</antcall>	
 		
+        <!-- Only relevant for MQ -->
 		<antcall target="create-jms-dest">
-			<param name="dest.name" value="PhysicalReplyQueue"/>
+			<param name="dest.name" value="outboundQueue"/>
 			<param name="dest.type" value="queue"/>
 		</antcall>	
+    	
+		<!-- select the appropriate string for this provider -->
+		<propertycopy property="reply.adminobject.property" from="${genericra.jmsimpl.id}.reply.adminobject.property"/>    	
+    	
 		<antcall target="create-admin-object-common">
 			<param name="adminobject.raname" value="genericra"/>
 			<param name="adminobject.restype" value="javax.jms.Queue"/>
-			<param name="adminobject.property" value="DestinationProperties=imqDestinationName\=PhysicalReplyQueue"/>
-			<param name="adminobject.jndiname" value="jms/ReplyQueue "/>
+			<param name="adminobject.property" value="${reply.adminobject.property}"/>
+			<param name="adminobject.jndiname" value="jms/outboundQueue"/>
 		</antcall>	
     </target>
 
@@ -107,19 +124,19 @@
 			<param name="connector.conpool.name" value="qcpool"/>
 		</antcall>
 		<antcall target="delete-jms-dest">
-			<param name="dest.name" value="PhysicalRxQueue"/>
+			<param name="dest.name" value="inboundQueue"/>
 			<param name="dest.type" value="queue"/>
 		</antcall>	
 		<antcall target="delete-admin-object-common">
-			<param name="adminobject.jndiname" value="jms/ReceiverQueue "/>
+			<param name="adminobject.jndiname" value="jms/inboundQueue "/>
 		</antcall>	
 		
 		<antcall target="delete-jms-dest">
-			<param name="dest.name" value="PhysicalReplyQueue"/>
+			<param name="dest.name" value="outboundQueue"/>
 			<param name="dest.type" value="queue"/>
 		</antcall>	
 		<antcall target="delete-admin-object-common">
-			<param name="adminobject.jndiname" value="jms/ReplyQueue "/>
+			<param name="adminobject.jndiname" value="jms/outboundQueue "/>
 		</antcall>	
 	
     </target>

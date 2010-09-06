@@ -1,9 +1,5 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 
-<!DOCTYPE project [
-<!ENTITY commonSetup SYSTEM "file:../config/properties.xml">
-<!ENTITY commonBuild SYSTEM "file:../config/common.xml">
-]>
 <!--
  * Copyright 2004-2005 Sun Microsystems, Inc.
  *
@@ -23,8 +19,8 @@
 
 <project name="genericratests" default="usage" basedir=".">
 
-    &commonSetup;
-    &commonBuild;
+	<import file="common/properties.xml"/>
+	<import file="common/common.xml"/>
 
     <target name="all" depends="init-common">
 		<antcall target="setup"/>
@@ -33,17 +29,38 @@
 		</antcall>
 		<antcall target="unsetup"/>
 	</target>
+	
+	<target name="foo" depends="check-genericra.jmsimpl.id">
+		
+		<!-- Run a target appropriate to the specified JMS provider -->
+        <ant antfile="build-${genericra.jmsimpl.id}.xml"
+             target="targetname"
+             inheritall="true"
+             inheritRefs="true"
+        >
+        	<property name="jcaid" value="${genericra.jmsimpl.id}" />
+        </ant>          
+        	
+	</target>
+	
+	<target name="setup" depends="check-glassfish.version,check-genericra.jmsimpl.id,check-genericra.raconfig.deliverytype,check-genericra.raconfig.supportsxa,init-common">
+		
+		<!-- select the appropriate config string for this provider -->
+		<propertycopy property="raconfig" from="${genericra.jmsimpl.id}.raconfig"/>
+		
+		<!-- we will prepend the chosen DeliveryType and SupportXA values below -->
+					
+		<!-- Create RA config -->
+    	<echo>Using DeliveryType=${genericra.raconfig.deliverytype}</echo>
+    	<antcall target="create-resource-adapter-config-common">
+    	   <param name="raconfig.property" value="SupportsXA=${genericra.raconfig.supportsxa}:DeliveryType=${genericra.raconfig.deliverytype}:${raconfig}" />
+    	   <param name="raname" value="genericra"/>
+    	</antcall>	
 
-	<target name="setup" depends="init-common">
-		<!-- create RA config. By default configured against SJSMQ -->
-		<antcall target="create-resource-adapter-config-common">
-			<param name="raconfig.property" value="SupportsXA=true:ProviderIntegrationMode=javabean:DeliveryType=Synchronous:ConnectionFactoryClassName=com.sun.messaging.ConnectionFactory:CommonSetterMethodName=setProperty:UserName=guest:Password=guest:QueueConnectionFactoryClassName=com.sun.messaging.QueueConnectionFactory:TopicConnectionFactoryClassName=com.sun.messaging.TopicConnectionFactory:QueueClassName=com.sun.messaging.Queue:TopicClassName=com.sun.messaging.Topic:LogLevel=info:UserName=guest:Password=guest:XAQueueConnectionFactoryClassName=com.sun.messaging.XAQueueConnectionFactory:XATopicConnectionFactoryClassName=com.sun.messaging.XATopicConnectionFactory:XAConnectionFactoryClassName=com.sun.messaging.XAConnectionFactory" />
-			<param name="raname" value="genericra" />
-		</antcall>
 		<!-- deploy RA -->
 		<antcall target="deploy-rar-common"/>
 	</target>
-	
+		
 	<target name="unsetup" depends="init-common">
 		<antcall target="delete-resource-adapter-config-common">
 			<param name="raname" value="genericra" />
@@ -55,18 +72,32 @@
 
 	<target name="run-all-tests" depends="init-common">
 		<record name="genericratests.output" action="start" />
-		<echo message="@@## Generic RA tests ##@@" />
-		<echo message="@@## Stress.lookup ##@@" />
-		<ant dir="stress.lookup" target="${test-target}" />
-		<echo message="@@## Stress.queue ##@@" />
+		<echo message="@@## Starting Generic RA tests ##@@" />
+		
+		<echo message="@@## Running stress.queue ##@@" />
 		<ant dir="stress.queue" target="${test-target}" />
-		<echo message="@@## Stress.topic ##@@" />
-		<ant dir="stress.topic" target="${test-target}" />
-		<echo message="@@## Stress.topic.clientId ##@@" />
-		<ant dir="stress.topic.clientId" target="${test-target}" />
+		<echo message="@@## Finished stress.queue ##@@" />
+
+		<echo message=" @@## Running stress.queue.requiresnew ##@@" />
+		<ant dir="stress.queue.requiresnew" target="${test-target}" />
+		<echo message=" @@## Finished stress.queue.requiresnew ##@@" />
+
+		
+		<!--<echo message="@@## Running stress.queue.redelivery ##@@" / -->
+		<!--ant dir="stress.queue.redelivery" target="${test-target}" / -->
+		<!--<echo message="@@## Finished stress.queue.redelivery ##@@" / -->
+
+		
+		<echo message="@@## Running stress.topic.nondurable ##@@" />
+		<ant dir="stress.topic.nondurable" target="${test-target}" />
+		<echo message="@@## Finished stress.topic.nondurable ##@@" />
+
+		<echo message="@@## Running stress.topic.durable ##@@" />
+		<ant dir="stress.topic.durable" target="${test-target}" />
+		<echo message="@@## Finished stress.topic.durable ##@@" />
+		
 		<record name="connector.output" action="stop" />
-		<ant dir="suspendtx" target="${test-target}" />
-		<record name="connector.output" action="stop" />
+	 
 	</target>
 
 	<target name="clean" depends="init-common">

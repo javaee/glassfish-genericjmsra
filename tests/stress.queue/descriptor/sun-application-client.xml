@@ -22,18 +22,14 @@
     <resource-ref>
       <res-ref-name>jms/QCFactory</res-ref-name>
       <jndi-name>jms/QCFactory</jndi-name>
-      <default-resource-principal>
-        <name>guest</name>
-        <password>guest</password>
-      </default-resource-principal>
     </resource-ref>
     <resource-env-ref>
-      <resource-env-ref-name>jms/SampleQueue</resource-env-ref-name>
-      <jndi-name>jms/ReceiverQueue</jndi-name>
+      <resource-env-ref-name>jms/inboundQueue</resource-env-ref-name>
+      <jndi-name>jms/inboundQueue</jndi-name>
     </resource-env-ref>
     <resource-env-ref>
-      <resource-env-ref-name>jms/clientQueue</resource-env-ref-name>
-      <jndi-name>jms/ReplyQueue</jndi-name>
+      <resource-env-ref-name>jms/outboundQueue</resource-env-ref-name>
+      <jndi-name>jms/outboundQueue</jndi-name>
     </resource-env-ref>
 </sun-application-client>
 
