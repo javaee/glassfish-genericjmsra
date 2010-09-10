@@ -293,8 +293,13 @@ Variables Used:
     failonerror="false"/>
     
   <!-- Select the appropriate value of various strings that will be substituted into sun-ejb-jar.xml -->
-  <propertycopy property="activation-config.DestinationProperties" from="${genericra.jmsimpl.id}.activation-config.DestinationProperties"/>   
-  <propertycopy property="activation-config.DeadMessageDestinationProperties" from="${genericra.jmsimpl.id}.activation-config.DeadMessageDestinationProperties"/>   
+  <propertycopy property="activation-config.DestinationProperties" from="${genericra.jmsimpl.id}.activation-config.DestinationProperties"/>  
+  <if>
+    <isset property="xa.ejb-jar.assembly-descriptor.container-transaction.trans-attribute2"/>
+    <then>
+      <propertycopy property="activation-config.DeadMessageDestinationProperties" from="${genericra.jmsimpl.id}.activation-config.DeadMessageDestinationProperties"/>   
+    </then>
+  </if>
   <propertycopy property="activation-config.ConnectionFactoryJndiName" from="${genericra.jmsimpl.id}.activation-config.ConnectionFactoryJndiName"/>   
   <propertycopy property="activation-config.DestinationJndiName" from="${genericra.jmsimpl.id}.activation-config.DestinationJndiName"/>   
     
