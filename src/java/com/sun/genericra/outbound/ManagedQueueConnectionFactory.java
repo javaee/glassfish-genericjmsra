@@ -43,7 +43,7 @@ public class ManagedQueueConnectionFactory
 
     protected XAConnection createXAConnection(PasswordCredential pc,
         javax.jms.ConnectionFactory cf) throws JMSException {
-        if (pc != null) {
+        if (pc != null && (!pc.getUserName().equals(""))) {
             return ((XAQueueConnectionFactory) cf).createXAQueueConnection(pc.getUserName(),
                 new String(pc.getPassword()));
         } else {
@@ -53,7 +53,7 @@ public class ManagedQueueConnectionFactory
 
     protected Connection createConnection(PasswordCredential pc,
         javax.jms.ConnectionFactory cf) throws JMSException {
-        if (pc != null) {
+        if (pc != null && (!pc.getUserName().equals(""))) {
             return ((QueueConnectionFactory) cf).createQueueConnection(pc.getUserName(),
                 new String(pc.getPassword()));
         } else {

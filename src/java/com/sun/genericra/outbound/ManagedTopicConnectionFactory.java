@@ -1,5 +1,5 @@
 /**
- * Copyright 2004-2005 Sun Microsystems, Inc.
+ * Copyright 2004-2010 Sun Microsystems, Inc.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ public class ManagedTopicConnectionFactory
 
     protected XAConnection createXAConnection(PasswordCredential pc,
         javax.jms.ConnectionFactory cf) throws JMSException {
-        if (pc != null) {
+        if (pc != null && (!pc.getUserName().equals(""))) {
             return ((XATopicConnectionFactory) cf).createXATopicConnection(pc.getUserName(),
                 new String(pc.getPassword()));
         } else {
@@ -53,7 +53,7 @@ public class ManagedTopicConnectionFactory
 
     protected Connection createConnection(PasswordCredential pc,
         javax.jms.ConnectionFactory cf) throws JMSException {
-        if (pc != null) {
+        if (pc != null && (!pc.getUserName().equals(""))) {
             return ((TopicConnectionFactory) cf).createTopicConnection(pc.getUserName(),
                 new String(pc.getPassword()));
         } else {

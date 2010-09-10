@@ -40,7 +40,7 @@ public class ManagedJMSConnectionFactory
 
     protected javax.jms.XAConnection createXAConnection(PasswordCredential pc,
         javax.jms.ConnectionFactory cf) throws JMSException {
-        if (pc != null) {
+        if (pc != null && (!pc.getUserName().equals(""))) {
             return ((XAConnectionFactory) cf).createXAConnection(pc.getUserName(),
                 new String(pc.getPassword()));
         } else {
@@ -50,7 +50,7 @@ public class ManagedJMSConnectionFactory
 
     protected javax.jms.Connection createConnection(PasswordCredential pc,
         javax.jms.ConnectionFactory cf) throws JMSException {
-        if (pc != null) {
+        if (pc != null && (!pc.getUserName().equals(""))) {
             return ((javax.jms.ConnectionFactory) cf).createConnection(pc.getUserName(),
                 new String(pc.getPassword()));
         } else {
