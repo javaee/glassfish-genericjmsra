@@ -154,15 +154,23 @@ public abstract class AbstractJmsResourcePool {
         String user = consumer.getSpec().getUserName();
         String password = consumer.getSpec().getPassword();
         
-        if (isTopic()) {
-            con = ((TopicConnectionFactory) cf).createTopicConnection(user,
-                    password);
-        } else if (isQueue()) {
-            con = ((QueueConnectionFactory) cf).createQueueConnection(user,
-                    password);
-        } else {
-            con = cf.createConnection(user, password);
-        }
+		if (user == null || user.equals("")) {
+			if (isTopic()) {
+				con = ((TopicConnectionFactory) cf).createTopicConnection();
+			} else if (isQueue()) {
+				con = ((QueueConnectionFactory) cf).createQueueConnection();
+			} else {
+				con = cf.createConnection();
+			}
+		} else {
+			if (isTopic()) {
+				con = ((TopicConnectionFactory) cf).createTopicConnection(user, password);
+			} else if (isQueue()) {
+				con = ((QueueConnectionFactory) cf).createQueueConnection(user, password);
+			} else {
+				con = cf.createConnection(user, password);
+			}
+		}
         
         return con;
     }
