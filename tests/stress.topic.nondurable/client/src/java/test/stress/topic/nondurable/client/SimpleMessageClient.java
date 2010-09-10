@@ -49,7 +49,7 @@ public class SimpleMessageClient extends GenericClient implements Runnable {
 
 	public static void main(String[] args) throws Exception {
 
-		drainQueue("java:comp/env/jms/outboundQueue");
+		drainQueue("java:comp/env/jms/QCFactory","java:comp/env/jms/outboundQueue");
 
 		/**
 		 * Start the threads that will send messages to MDB
@@ -172,28 +172,6 @@ public class SimpleMessageClient extends GenericClient implements Runnable {
 			System.exit(0);
 		}
 
-	}
-
-	private static void drainQueue(String queueJNDIname) throws NamingException, JMSException {
-
-		Context jndiContext = new InitialContext();
-		QueueConnectionFactory queueConnectionFactory = (QueueConnectionFactory) jndiContext
-				.lookup("java:comp/env/jms/QCFactory");
-		Queue queue = (Queue) jndiContext.lookup(queueJNDIname);
-		QueueConnection queueConnection = queueConnectionFactory.createQueueConnection();
-		QueueSession queueSession = queueConnection.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
-		QueueReceiver queueReceiver = queueSession.createReceiver(queue);
-		queueConnection.start();
-		int numMessages = 0;
-		while (true) {
-			Message message = queueReceiver.receive(1000);
-			if (message == null)
-				break;
-			numMessages++;
-		}
-		if (numMessages > 0)
-			System.out.println("Drained " + numMessages + " from queue with JNDI name " + queueJNDIname);
-		queueConnection.close();
 	}
 
 	public void run() {

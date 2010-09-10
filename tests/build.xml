@@ -74,6 +74,10 @@
 		<record name="genericratests.output" action="start" />
 		<echo message="@@## Starting Generic RA tests ##@@" />
 		
+		<echo message=" @@## Running simple.queue ##@@" />
+		<ant dir="simple.queue" target="${test-target}" />
+		<echo message=" @@## Finished simple.queue ##@@" />
+		
 		<echo message="@@## Running stress.queue ##@@" />
 		<ant dir="stress.queue" target="${test-target}" />
 		<echo message="@@## Finished stress.queue ##@@" />
@@ -81,12 +85,10 @@
 		<echo message=" @@## Running stress.queue.requiresnew ##@@" />
 		<ant dir="stress.queue.requiresnew" target="${test-target}" />
 		<echo message=" @@## Finished stress.queue.requiresnew ##@@" />
-
 		
-		<!--<echo message="@@## Running stress.queue.redelivery ##@@" / -->
-		<!--ant dir="stress.queue.redelivery" target="${test-target}" / -->
-		<!--<echo message="@@## Finished stress.queue.redelivery ##@@" / -->
-
+		<echo message="@@## Running stress.queue.redelivery ##@@"/>
+		<ant dir="stress.queue.redelivery" target="${test-target}"/>
+		<echo message="@@## Finished stress.queue.redelivery ##@@"/>
 		
 		<echo message="@@## Running stress.topic.nondurable ##@@" />
 		<ant dir="stress.topic.nondurable" target="${test-target}" />

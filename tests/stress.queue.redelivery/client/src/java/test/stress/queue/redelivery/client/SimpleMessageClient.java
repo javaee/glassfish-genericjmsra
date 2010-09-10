@@ -49,9 +49,9 @@ public class SimpleMessageClient extends GenericClient implements Runnable {
 
 	public static void main(String[] args) throws Exception {
 
-		drainQueue("java:comp/env/jms/SampleQueue");
-		drainQueue("java:comp/env/jms/clientQueue");
-
+		drainQueue("java:comp/env/jms/QCFactory","java:comp/env/jms/SampleQueue");
+		drainQueue("java:comp/env/jms/QCFactory","java:comp/env/jms/clientQueue");
+		
 		/**
 		 * Start the threads that will send messages to MDB
 		 */

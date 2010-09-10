@@ -163,6 +163,7 @@ public class SimpleMessageClient extends GenericClient implements Runnable {
 			
 			// Check that the session bean sent a copy of every message to the second outbound queue
 			int numMessagesReceived = drainQueue("java:comp/env/jms/QCFactory","java:comp/env/jms/outboundQueue2");
+
 			if (numMessagesReceived!=NUM_CLIENTS*NUM_CYCLES){
 				System.out.println("Received fewer messages than expected from second outbound queue");
 				pass=false;
@@ -190,29 +191,6 @@ public class SimpleMessageClient extends GenericClient implements Runnable {
 
 	}
 	
-	private static int drainQueue(String cfJNDIName, String queueJNDIName) throws NamingException, JMSException {
-	
-		Context jndiContext = new InitialContext();
-		QueueConnectionFactory queueConnectionFactory = (QueueConnectionFactory) jndiContext.lookup(cfJNDIName);
-		Queue queue = (Queue)jndiContext.lookup(queueJNDIName);
-		QueueConnection queueConnection = queueConnectionFactory.createQueueConnection();
-		QueueSession queueSession = queueConnection.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
-		QueueReceiver queueReceiver = queueSession.createReceiver(queue);
-		queueConnection.start();
-		int numMessages = 0;
-		while (true) {
-			Message message = queueReceiver.receive(1000);
-			if (message == null)
-				break;
-			numMessages++;
-		}
-
-		System.out.println("Drained " + numMessages + " messages from queue with JNDI name " + queueJNDIName);
-		queueConnection.close();
-
-		return numMessages;
-	}
-
 	public void run() {
 
 		Context jndiContext = null;
