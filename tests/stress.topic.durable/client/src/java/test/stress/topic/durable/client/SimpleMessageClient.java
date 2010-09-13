@@ -189,7 +189,7 @@ public class SimpleMessageClient extends GenericClient implements Runnable {
 		try {
 			jndiContext = new InitialContext();
 			topicConnectionFactory = (TopicConnectionFactory) jndiContext.lookup("java:comp/env/jms/TCFactory");
-			topic = (Topic) jndiContext.lookup("java:comp/env/jms/inboundTopic");
+			topic = (Topic) jndiContext.lookup("java:comp/env/jms/inboundTopicForDurableTest");
 
 			int startId = id * NUM_CYCLES;
 			int endId = (id * NUM_CYCLES) + NUM_CYCLES;
