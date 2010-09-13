@@ -31,8 +31,8 @@
         <jndi-name>jms/QCFactory</jndi-name>
       </resource-ref>
       <resource-env-ref>
-        <resource-env-ref-name>jms/inboundTopic</resource-env-ref-name>
-        <jndi-name>jms/inboundTopic</jndi-name>
+        <resource-env-ref-name>jms/inboundTopicForDurableTest</resource-env-ref-name>
+        <jndi-name>jms/inboundTopicForDurableTest</jndi-name>
       </resource-env-ref>
       <mdb-connection-factory>
           <jndi-name>jms/TCFactory</jndi-name>

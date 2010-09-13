@@ -274,7 +274,7 @@ Variables Used:
   	      <propertycopy property="ejb-jar.assembly-descriptor.container-transaction.trans-attribute2" from="xa.ejb-jar.assembly-descriptor.container-transaction.trans-attribute2"/>   
   	    </then>
   	    <else>
-  	      <property name="ejb-jar.assembly-descriptor.container-transaction.trans-attribute2" value=""/>   
+  	      <property name="ejb-jar.assembly-descriptor.container-transaction.trans-attribute2" value="ERROR"/>   
   	    </else>
   	  </if>
   	</else>
@@ -295,10 +295,13 @@ Variables Used:
   <!-- Select the appropriate value of various strings that will be substituted into sun-ejb-jar.xml -->
   <propertycopy property="activation-config.DestinationProperties" from="${genericra.jmsimpl.id}.activation-config.DestinationProperties"/>  
   <if>
-    <isset property="xa.ejb-jar.assembly-descriptor.container-transaction.trans-attribute2"/>
+    <isset property="${genericra.jmsimpl.id}.activation-config.DeadMessageDestinationProperties"/>
     <then>
       <propertycopy property="activation-config.DeadMessageDestinationProperties" from="${genericra.jmsimpl.id}.activation-config.DeadMessageDestinationProperties"/>   
     </then>
+    <else>
+      <property name="activation-config.DeadMessageDestinationProperties" value="ERROR"/>   
+    </else>  	
   </if>
   <propertycopy property="activation-config.ConnectionFactoryJndiName" from="${genericra.jmsimpl.id}.activation-config.ConnectionFactoryJndiName"/>   
   <propertycopy property="activation-config.DestinationJndiName" from="${genericra.jmsimpl.id}.activation-config.DestinationJndiName"/>   

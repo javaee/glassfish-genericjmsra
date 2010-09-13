@@ -85,7 +85,7 @@
     	
         <!-- Only relevant for MQ -->
 		<antcall target="create-jms-dest">
-			<param name="dest.name" value="inboundTopic"/>
+			<param name="dest.name" value="inboundTopicForDurableTest"/>
 			<param name="dest.type" value="topic"/>
 		</antcall>	
     	
@@ -102,7 +102,7 @@
 			<param name="adminobject.raname" value="genericra"/>
 			<param name="adminobject.restype" value="javax.jms.Topic"/>
 			<param name="adminobject.property" value="${inbound.adminobject.property}"/>
-			<param name="adminobject.jndiname" value="jms/inboundTopic"/>
+			<param name="adminobject.jndiname" value="jms/inboundTopicForDurableTest"/>
 		</antcall>	
 		    	
 		<!-- select the appropriate string for this provider -->
@@ -142,11 +142,11 @@
 			<param name="connector.conpool.name" value="tcpool"/>
 		</antcall>    	
 		<antcall target="delete-jms-dest">
-			<param name="dest.name" value="inboundTopic"/>
+			<param name="dest.name" value="inboundTopicForDurableTest"/>
 			<param name="dest.type" value="topic"/>
 		</antcall>	
 		<antcall target="delete-admin-object-common">
-			<param name="adminobject.jndiname" value="jms/inboundTopic"/>
+			<param name="adminobject.jndiname" value="jms/inboundTopicForDurableTest"/>
 		</antcall>	
 		
 		<antcall target="delete-jms-dest">
