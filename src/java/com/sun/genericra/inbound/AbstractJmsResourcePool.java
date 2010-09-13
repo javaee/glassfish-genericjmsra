@@ -100,16 +100,25 @@ public abstract class AbstractJmsResourcePool {
         String user = consumer.getSpec().getUserName();
         String password = consumer.getSpec().getPassword();
         
-        if (isQueue()) {
-            xac = ((XAQueueConnectionFactory) xacf).createXAQueueConnection(user,
-                    password);
-        } else if (isTopic()) {
-            xac = ((XATopicConnectionFactory) xacf).createXATopicConnection(user,
-                    password);
-        } else {
-            xac = xacf.createXAConnection(user, password);
-        }
-        
+		if (user == null || user.equals("")) {
+	        if (isQueue()) {
+	            xac = ((XAQueueConnectionFactory) xacf).createXAQueueConnection();
+	        } else if (isTopic()) {
+	            xac = ((XATopicConnectionFactory) xacf).createXATopicConnection();
+	        } else {
+	            xac = xacf.createXAConnection();
+	        }			
+		} else {
+	        if (isQueue()) {
+	            xac = ((XAQueueConnectionFactory) xacf).createXAQueueConnection(user,
+	                    password);
+	        } else if (isTopic()) {
+	            xac = ((XATopicConnectionFactory) xacf).createXATopicConnection(user,
+	                    password);
+	        } else {
+	            xac = xacf.createXAConnection(user, password);
+	        }
+		}
         return xac;
     }
     
@@ -237,16 +246,25 @@ public abstract class AbstractJmsResourcePool {
         String user = consumer.getSpec().getUserName();
         String password = consumer.getSpec().getPassword();
         
-        if (consumer.getSpec().getDeadMessageDestinationType().equals(Constants.TOPIC)) {
-            con = ((TopicConnectionFactory) cf).createTopicConnection(user,
-                    password);
-        } else if (consumer.getSpec().getDeadMessageDestinationType().equals(Constants.QUEUE)) {
-            con = ((QueueConnectionFactory) cf).createQueueConnection(user,
-                    password);
-        } else {
-            con = cf.createConnection(user, password);
-        }
-        
+		if (user == null || user.equals("")) {
+	        if (consumer.getSpec().getDeadMessageDestinationType().equals(Constants.TOPIC)) {
+	            con = ((TopicConnectionFactory) cf).createTopicConnection();
+	        } else if (consumer.getSpec().getDeadMessageDestinationType().equals(Constants.QUEUE)) {
+	            con = ((QueueConnectionFactory) cf).createQueueConnection();
+	        } else {
+	            con = cf.createConnection();
+	        }			
+		} else {
+	        if (consumer.getSpec().getDeadMessageDestinationType().equals(Constants.TOPIC)) {
+	            con = ((TopicConnectionFactory) cf).createTopicConnection(user,
+	                    password);
+	        } else if (consumer.getSpec().getDeadMessageDestinationType().equals(Constants.QUEUE)) {
+	            con = ((QueueConnectionFactory) cf).createQueueConnection(user,
+	                    password);
+	        } else {
+	            con = cf.createConnection(user, password);
+	        }
+		}
         return con;
     }
     
