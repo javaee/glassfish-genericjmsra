@@ -10,7 +10,9 @@ SET J2EE_JAR=C:\Programs\JavaEE1.4SDK\lib\j2ee.jar
 
 REM Set Environment so you can run tests
 
-SET S1AS_HOME=C:\Sun\glassfish-2.1.2-v04c
+REM SET S1AS_HOME=C:\Sun\glassfish-2.1.2-v04c
 REM SET S1AS_HOME=C:\Sun\glassfish-3.0.1\glassfish
+SET S1AS_HOME=C:\Sun\glassfish-3.1-b17-08_24_2010\glassfishv3\glassfish
+REM SET S1AS_HOME=C:\Sun\glassfish-3.1-b21-09_20_2010\glassfishv3\glassfish
 
 SET PATH=%S1AS_HOME%/bin;%PATH%

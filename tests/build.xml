@@ -22,6 +22,7 @@
 	<import file="common/properties.xml"/>
 	<import file="common/common.xml"/>
 
+	<!-- Run all tests -->
     <target name="all" depends="init-common">
 		<antcall target="setup"/>
 		<antcall target="run-all-tests">
@@ -30,6 +31,24 @@
 		<antcall target="unsetup"/>
 	</target>
 	
+	<!-- Run a single test. Specify test subdirectory using -Dtestdir=test-dir -->
+    <target name="single" depends="init-common">
+        <if>
+            <isset property="testdir"/>
+    	    <then>
+    			<antcall target="setup"/>
+    			<echo message=" @@## Running ${testdir} ##@@" />
+    			<ant dir="${testdir}" target="all" />
+    			<echo message=" @@## Finished ${testdir} ##@@" />
+    			<antcall target="unsetup"/>
+     	    </then>
+    	    <else>
+    	    	<echo>Need to specify test directory  using -Dtestdir=test-dir. For example -Dtestdir=performance.queue</echo>
+     	    </else>
+    	</if>
+	</target>
+	
+	<!-- Not used -->
 	<target name="foo" depends="check-genericra.jmsimpl.id">
 		
 		<!-- Run a target appropriate to the specified JMS provider -->
@@ -74,6 +93,10 @@
 		<record name="genericratests.output" action="start" />
 		<echo message="@@## Starting Generic RA tests ##@@" />
 		
+		<echo message=" @@## Running performance.queue ##@@" />
+		<ant dir="performance.queue" target="${test-target}" />
+		<echo message=" @@## Finished performance.queue ##@@" />
+		
 		<echo message=" @@## Running simple.queue ##@@" />
 		<ant dir="simple.queue" target="${test-target}" />
 		<echo message=" @@## Finished simple.queue ##@@" />
@@ -86,6 +109,7 @@
 		<ant dir="stress.queue.requiresnew" target="${test-target}" />
 		<echo message=" @@## Finished stress.queue.requiresnew ##@@" />
 		
+		<!-- redelivery test doesn't work with noxa -->
 		<echo message="@@## Running stress.queue.redelivery ##@@"/>
 		<ant dir="stress.queue.redelivery" target="${test-target}"/>
 		<echo message="@@## Finished stress.queue.redelivery ##@@"/>

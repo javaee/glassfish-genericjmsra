@@ -116,7 +116,9 @@ public class SimpleMessageClient extends GenericClient implements Runnable {
 			//
 			// Receives all the messages and keep in the data structure
 			//
-			for (int i = 0; i < NUM_CLIENTS * NUM_CYCLES; i++) {
+			
+			int numMessages = NUM_CLIENTS * NUM_CYCLES;
+			for (int i = 0; i < numMessages; i++) {
 				TextMessage msg = (TextMessage) queueReceiver.receive(TIME_OUT);
 				if (msg == null) {
 					System.out.println("Received :" + i + " messages before exiting");

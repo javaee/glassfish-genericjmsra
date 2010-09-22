@@ -754,11 +754,11 @@ Variables Used:
 </target>       
 
 <target name="deploy-common-pe" depends="init-common" unless="ee">
-    <echo message="Deploying application of name ${appname}App and 
+  <echo message="Deploying application of name ${appname}App and 
         ear file ${assemble.dir}/${appname}App.ear " level="verbose"/>
-<property name="deployed.app" value="${assemble.dir}/${appname}App.ear"/>
+  <property name="deployed.app" value="${assemble.dir}/${appname}App.ear"/>
 
-<echo message="asadmin deploy --user ${admin.user} --passwordfile ${admin.passwordfile} --host ${admin.host} --port ${admin.port} --target ${appserver.instance.name} --type ${apptype} --retrieve ${assemble.dir} ${deployed.app}"/>
+  <echo message="asadmin deploy ${as.userpass} --host ${admin.host} --port ${admin.port} --target ${appserver.instance.name} --retrieve ${assemble.dir} ${deployed.app}"/>
   <exec executable="${ASADMIN}" failonerror="false">
     <arg line="deploy"/>
     <arg line="${as.userpass}"/>
@@ -924,6 +924,7 @@ successful"/>
   <property environment="env"/>
   <exec executable="${APPCLIENT}" failonerror="false">
     <env key="APPCPATH" value="${appclient.cpath}"/>
+    <!-- arg line="-Dgenericra.inAppClientContainer=true"/ -->
     <arg line="-client ${assemble.dir}/${appname}AppClient.jar"/>
     <arg line="-name ${appname}Client"/>
     <arg line="-textauth"/>

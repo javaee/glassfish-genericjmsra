@@ -68,6 +68,8 @@ public class SimpleMessageBean extends GenericMDB implements MessageDrivenBean, 
 	}
 
 	public void onMessage(Message inMessage) {
+        if (monitorNoOfBeansInUse) incrementBeansInUseCount();
+		
 		TextMessage msg = null;
 
 		QueueConnection queueConnection = null;
@@ -104,7 +106,11 @@ public class SimpleMessageBean extends GenericMDB implements MessageDrivenBean, 
 			} catch (Exception e) {
 			}
 		}
-	} // onMessage
+		
+        if (reportThroughput) updateMessageCount();
+		if (monitorNoOfBeansInUse) decrementBeansInUseCount();
+		
+	}  
 
 	public void ejbRemove() {
 		System.out.println("In SimpleMessageBean.remove()");
