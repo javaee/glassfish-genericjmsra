@@ -528,6 +528,7 @@ Variables Used:
     <!-- target to delete and create resourceadapter configs -->
 	<target name="create-resource-adapter-config-common" depends="init-common">
 		<echo message="Creating resource adapter config for resource adapter ${raname} with property ${raconfig.property}" />	
+		<echo>asadmin create-resource-adapter-config ${as.props} --property ${raconfig.property} ${as.userpass} ${raname}</echo>
 		<exec executable="${ASADMIN}" failonerror="false">
 			<arg line="create-resource-adapter-config" />
 			<arg line="${as.props}"/>
@@ -548,7 +549,7 @@ Variables Used:
 <!--  deploy/undeploy RAR files                     -->
 <target name="deploy-rar-common" depends="init-common">
   <echo message="Deploying ${rarfile}" level="verbose"/>
-  <echo message="asadmin ${as.props} deploy --target ${appserver.instance.name} ${as.userpass} ${rarfile}"/>
+  <echo message="asadmin deploy ${as.port} --target ${appserver.instance.name} ${as.userpass} ${rarfile}"/>
   <exec executable="${ASADMIN}" failonerror="false">
     <arg line="deploy"/>
     <arg line="${as.port}"/>
@@ -570,7 +571,8 @@ Variables Used:
 
 <target name="create-admin-object-common" depends="init-common">
   <echo message="Creating admin object with name ${adminobject.jndiname}" />
-	<echo message="destination properties= ${adminobject.property}"/>
+  <echo message="destination properties= ${adminobject.property}"/>
+  <echo>asadmin create-admin-object ${as.props} --target ${appserver.instance.name} --restype ${adminobject.restype} --property ${adminobject.property} --raname ${adminobject.raname} ${adminobject.jndiname}</echo>
   <exec executable="${ASADMIN}" failonerror="false">
     <arg line="create-admin-object"/>
     <arg line="${as.props}"/>
@@ -730,6 +732,7 @@ Variables Used:
 <!-- JMS: create/delete Physical JMS Destination-->
 <target name="create-jms-dest" depends="init-common">
   <echo message="Creating JMS destination with name ${dest.name}"/>
+  <echo>asadmin create-jmsdest --desttype ${dest.type} ${as.props} ${dest.name}</echo>
   <exec executable="${ASADMIN}">
     <arg line="create-jmsdest --desttype ${dest.type} "/>    
     <arg line="${as.props}"/>
@@ -739,6 +742,7 @@ Variables Used:
 
 <target name="delete-jms-dest" depends="init-common">
   <echo message="Delete JMS destination with name ${dest.name}"/>
+  <echo>asadmin delete-jmsdest --desttype ${dest.type} ${as.props} ${dest.name}</echo>
   <exec executable="${ASADMIN}">
     <arg line="delete-jmsdest --desttype ${dest.type} "/>    
     <arg line="${as.props}"/>
@@ -754,12 +758,11 @@ Variables Used:
 </target>       
 
 <target name="deploy-common-pe" depends="init-common" unless="ee">
-  <echo message="Deploying application of name ${appname}App and 
-        ear file ${assemble.dir}/${appname}App.ear " level="verbose"/>
-  <property name="deployed.app" value="${assemble.dir}/${appname}App.ear"/>
+    <echo message="Deploying application of name ${appname}App and ear file ${assemble.dir}/${appname}App.ear " level="verbose"/>
+	<property name="deployed.app" value="${assemble.dir}/${appname}App.ear"/>
 
-  <echo message="asadmin deploy ${as.userpass} --host ${admin.host} --port ${admin.port} --target ${appserver.instance.name} --retrieve ${assemble.dir} ${deployed.app}"/>
-  <exec executable="${ASADMIN}" failonerror="false">
+	<echo>asadmin deploy ${as.userpass} --host ${admin.host} --port ${admin.port} --target ${appserver.instance.name} --retrieve ${assemble.dir} ${deployed.app}</echo>
+	<exec executable="${ASADMIN}" failonerror="false">
     <arg line="deploy"/>
     <arg line="${as.userpass}"/>
     <arg line="--host ${admin.host}"/>
