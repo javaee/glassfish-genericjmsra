@@ -33,7 +33,7 @@ Setup for running tests in Glassfish MQ
 
 Glassfish 2.x: nothing to do
 
-(Obsolete?) Glassfish 3.x: Copy imq.jar, imqutil.jar, imqjmx.jar, and imqbroker.jar from glassfish/mq/lib to glassfish/lib
+Glassfish 3.x: Copy imq.jar, imqutil.jar, imqjmx.jar, and imqbroker.jar from glassfish/mq/lib to glassfish/lib
 
 
 To run all tests
