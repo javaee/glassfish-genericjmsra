@@ -27,7 +27,7 @@ public class GenericClient {
 	protected static int drainQueue(String connectionFactoryJNDIName, String queueJNDIname) throws NamingException, JMSException {
 	
 		Context jndiContext = new InitialContext();
-		QueueConnectionFactory queueConnectionFactory = (QueueConnectionFactory) jndiContext.lookup("java:comp/env/jms/QCFactory");
+		QueueConnectionFactory queueConnectionFactory = (QueueConnectionFactory) jndiContext.lookup(connectionFactoryJNDIName);
 		Queue queue = (Queue) jndiContext.lookup(queueJNDIname);
 		QueueConnection queueConnection = queueConnectionFactory.createQueueConnection();
 		QueueSession queueSession = queueConnection.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
