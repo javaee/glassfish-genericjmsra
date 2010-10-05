@@ -527,7 +527,6 @@ Variables Used:
 
     <!-- target to delete and create resourceadapter configs -->
 	<target name="create-resource-adapter-config-common" depends="init-common">
-		<echo message="Creating resource adapter config for resource adapter ${raname} with property ${raconfig.property}" />	
 		<echo>asadmin create-resource-adapter-config ${as.props} --property ${raconfig.property} ${as.userpass} ${raname}</echo>
 		<exec executable="${ASADMIN}" failonerror="false">
 			<arg line="create-resource-adapter-config" />
