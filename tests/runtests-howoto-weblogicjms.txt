@@ -133,7 +133,7 @@ e.g. <java-config classpath-suffix="C:\Sun\glassfish-2.1.2-v04c\lib\wlthint3clie
 
 ** Configure application client classpath
 
-Edit the file tests/common/common.properties: Modify the property appclient.cpath to include a path to wlthint3client.jar 
+Edit the file tests/common/config.properties: Modify the property appclient.cpath to include a path to wlthint3client.jar 
 
 Running the tests
 -----------------
