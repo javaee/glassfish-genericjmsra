@@ -28,12 +28,12 @@
         <echo>Setting glassfish version to ${glassfish.version}</echo>
     </target>	
     
-    <target name="sync" description="Sets up the value of DeliveryType to test">
+    <target name="sync" description="Sets up the value of DeliveryType to Synchronous">
         <property name="genericra.raconfig.deliverytype" value="Synchronous" />
         <echo>Setting DeliveryType to ${genericra.raconfig.deliverytype}</echo>
     </target>
     
-    <target name="async" description="Sets up the value of DeliveryType to test">
+    <target name="async" description="Sets up the value of DeliveryType to Asynchronous">
         <property name="genericra.raconfig.deliverytype" value="Asynchronous" />
         <echo>Setting DeliveryType to ${genericra.raconfig.deliverytype}</echo>
     </target>    
@@ -50,14 +50,14 @@
 	   <fail unless="glassfish.version" >$${glassfish.version} needs to be specified: call an appropriate target first (gfv2 or gfv3)</fail>
 	</target>  	
 	
-    <target name="xa" description="Specify that SupportXA=false">
+    <target name="xa" description="Specify that SupportXA=true">
         <property name="genericra.raconfig.supportsxa" value="true" />
-        <echo>Setting SupportXA to ${genericra.jmsimpl.id}</echo>
+        <echo>Setting SupportXA to ${genericra.raconfig.supportsxa}</echo>
     </target>	
 	
     <target name="noxa" description="Specify that SupportXA=false">
         <property name="genericra.raconfig.supportsxa" value="false" />
-        <echo>Setting SupportXA to ${genericra.jmsimpl.id}</echo>
+        <echo>Setting SupportXA to ${genericra.raconfig.supportsxa}</echo>
     </target>		
 	
 	<target name="check-genericra.raconfig.supportsxa">
