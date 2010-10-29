@@ -110,9 +110,16 @@
 		<echo message=" @@## Finished stress.queue.requiresnew ##@@" />
 		
 		<!-- redelivery test doesn't work with noxa -->
-		<echo message="@@## Running stress.queue.redelivery ##@@"/>
-		<ant dir="stress.queue.redelivery" target="${test-target}"/>
-		<echo message="@@## Finished stress.queue.redelivery ##@@"/>
+		  <if>
+		  	<equals arg1="${genericra.raconfig.supportsxa}" arg2="true" />
+		  	<then>
+				<echo message="@@## Running stress.queue.redelivery ##@@"/>
+				<ant dir="stress.queue.redelivery" target="${test-target}"/>
+				<echo message="@@## Finished stress.queue.redelivery ##@@"/>		 
+		  	</then>
+		  </if>		
+		
+
 		
 		<echo message="@@## Running stress.topic.nondurable ##@@" />
 		<ant dir="stress.topic.nondurable" target="${test-target}" />
