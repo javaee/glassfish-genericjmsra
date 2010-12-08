@@ -2,7 +2,7 @@ HOWTO: runs tests for the Generic Resource Adapter for JMS with Sun Java System 
 ---------------------------------------------------------------------
 
 Initial Setup
--------------
+--------------
 
 1. Install application server
 
