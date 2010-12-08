@@ -25,13 +25,24 @@
 
    <property name="build.base.dir" value="${env.RA_HOME}/tests/build"/>
    <property name="build.classes.dir" value="${build.base.dir}/classes"/>
-   <property name="assemble.dir" value="${build.base.dir}/lib"/>
+   <property name="assemble.dir" value="${build.base.dir}/assembly"/>
+   <property name="lib.dir" value="${build.base.dir}/lib"/>	
    <property name="dist.dir" value="${build.base.dir}/dist"/>
+   <property name="report.dir" value="${build.base.dir}/report"/>
 
 <!-- tests -->
    <mkdir dir="${build.classes.dir}"/>
+   <mkdir dir="${lib.dir}"/>	
    <mkdir dir="${assemble.dir}"/>
    <mkdir dir="${dist.dir}"/>
+   <mkdir dir="${report.dir}"/>	
+
+	<!-- location of JUnit jar -->
+   <property name="junit.url"  value="http://cloud.github.com/downloads/KentBeck/junit/junit-4.8.2.jar"/>
+	
+   <property name="junit.jar.name"  value="junit-4.8.2.jar"/>
+   <property name="junit.jar"  value="${lib.dir}/${junit.jar.name}"/>
+
    
    <property name="pe" value="Platform Edition of S1AS"/>
    <property name="APS_HOME" value="${env.RA_HOME}/tests"/>
@@ -76,7 +87,7 @@
 
     <!-- Test Harnes properties -->
     <property name="compile.classpath"
-      value="${build.classes.dir}:${s1as.classpath}:${db.classpath}"/>
+      value="${build.classes.dir}:${s1as.classpath}:${db.classpath}:${junit.jar}"/>
     <!-- property name="ejbjar.classes" 
       value="**/*Local*.class,**/*Remote*.class,**/*Home*.class,**/*Bean*.class" / -->
     <!-- property name="appclientjar.classes" 

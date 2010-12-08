@@ -10,21 +10,25 @@
 
     <target name="gmq" description="Sets up this jms implementation to test">
         <property name="genericra.jmsimpl.id" value="gmq" />
+    	<property name="genericra.raconfig.jmqimpl.friendlyname" value="GlassFishMQ" />
         <echo>Setting jms implementation to ${genericra.jmsimpl.id}</echo>
     </target>
 		
     <target name="wljms" description="Sets up this jms implementation to test">
         <property name="genericra.jmsimpl.id" value="wljms" />
+    	<property name="genericra.raconfig.jmqimpl.friendlyname" value="WebLogicJMS" />
         <echo>Setting jms implementation to ${genericra.jmsimpl.id}</echo>
     </target>	
 	
     <target name="gfv2" description="Specifies which version of Glassfish">
         <property name="glassfish.version" value="gfv2" />
+        <property name="appserver.friendlyname" value="GlassFish" />
         <echo>Setting glassfish version to ${glassfish.version}</echo>
     </target>
 		
     <target name="gfv3" description="Specifies which version of Glassfish">
         <property name="glassfish.version" value="gfv3" />
+        <property name="appserver.friendlyname" value="GlassFish" />    	
         <echo>Setting glassfish version to ${glassfish.version}</echo>
     </target>	
     
@@ -52,11 +56,13 @@
 	
     <target name="xa" description="Specify that SupportXA=true">
         <property name="genericra.raconfig.supportsxa" value="true" />
+    	<property name="genericra.raconfig.supportsxa.friendlyname" value="XA" />
         <echo>Setting SupportXA to ${genericra.raconfig.supportsxa}</echo>
     </target>	
 	
     <target name="noxa" description="Specify that SupportXA=false">
         <property name="genericra.raconfig.supportsxa" value="false" />
+        <property name="genericra.raconfig.supportsxa.friendlyname" value="NoXA" />
         <echo>Setting SupportXA to ${genericra.raconfig.supportsxa}</echo>
     </target>		
 	
@@ -89,24 +95,60 @@ Variables used:
 </target>
 
 <!-- ================================================================ -->
-<!-- Target to compile the java source files -->
-<!-- 
-Variables used: 
-    ${build.classes.dir} 
-    ${compile.classpath}
-    ${src}
--->
-<!-- ================================================================ -->
-<target name="compile-common" depends="init-common">
+<target name="compile-common" depends="init-common,download-junit">
+    <antcall target="compileeach-common">
+        <param name="src" value="../common/ejb"/>
+    </antcall> 
+    <antcall target="compileeach-common">
+        <param name="src" value="ejb"/>
+    </antcall> 
+    <antcall target="compileeach-common">
+        <param name="src" value="../common/client"/>
+    </antcall>    	
+    <antcall target="compileeach-common">
+        <param name="src" value="client"/>
+    </antcall>
+    <antcall target="compileeach-common">
+        <param name="src" value="../common/junit"/>
+    </antcall>   	
+    <antcall target="compileeach-common">
+        <param name="src" value="junit"/>
+    </antcall> 
+</target>
+	
+<target name="compileeach-common" depends="init-common,download-junit">
   <mkdir dir="${build.classes.dir}"/>
   <echo message="common.xml: Compiling test source files" level="verbose"/>
   <echo message="${src} is the source"/>
   
+	<available file="${src}" type="dir" property="src.present"/>
+	<if>
+		  <isset property="src.present"/>
+		  <then>
   <javac srcdir="${src}"
     destdir="${build.classes.dir}"
     classpath="${compile.classpath}"
     debug="on"
     failonerror="true"/>
+		  </then>
+		  <else>
+			<echo>Cannot compile: ${src} does not exist</echo>
+		  </else>
+	</if>
+	</target>
+	
+	<!-- ================================================================ -->	
+	<!-- Download the JUnit jars   TODO sort out proxy config             -->
+    <target name="download-junit">
+    	<available file="${junit.jar}" type="file" property="junit.jar.present"/>
+    	<if>
+    	  <isset property="junit.jar.present"/>
+    	  <then>
+    	  </then>
+    	  <else>
+    	  	<get src="${junit.url}" dest="${junit.jar}" verbose="true"/>
+    	  </else>
+        </if>
 </target>
 
 <!-- ================================================================ -->
@@ -917,6 +959,7 @@ successful"/>
 
 <!-- run appclient in AppServ  -->
 <target name="runclient-common" depends="init-common">
+			
   <echo message="Executing appclient at Basedir:${basedir}"/>
   <echo message="Appclient jar: ${assemble.dir}/${appname}AppClient.jar"/>
   <echo message="Appname: ${appname}"/>
@@ -935,6 +978,49 @@ successful"/>
     <arg line="-xml ${env.S1AS_HOME}/domains/${admin.domain}/config/sun-acc.xml"/>
     <arg line="${appclient.application.args}"/>
   </exec>
+	
+</target>
+		
+<!-- run junit test  -->
+<target name="runjunit-common" depends="init-common">
+	
+	<mkdir dir="${report.dir}/xml"/>	
+	<mkdir dir="${report.dir}/xml/${genericra.raconfig.jmqimpl.friendlyname}-${appserver.friendlyname}-${genericra.raconfig.deliverytype}-${genericra.raconfig.supportsxa.friendlyname}"/>	
+    <junit
+    	fork="yes"
+       	printsummary="on"
+        haltonerror="off"
+        haltonfailure="off">
+        <classpath>
+            <pathelement location="${junit.jar}"/>
+            <pathelement location="${build.classes.dir}"/>
+        </classpath>
+        <batchtest 
+        	haltonfailure="no" 
+        	haltonerror="no" 
+        	todir="${report.dir}/xml/${genericra.raconfig.jmqimpl.friendlyname}-${appserver.friendlyname}-${genericra.raconfig.deliverytype}-${genericra.raconfig.supportsxa.friendlyname}">
+        	<fileset dir="${build.classes.dir}">
+            	<include name="**/Test*.class"/>
+            </fileset>
+        	<formatter type="xml"/>
+        </batchtest>
+    	<sysproperty key="testDirectory" value="${basedir}"/>
+	</junit>
+	
+</target>	
+	
+<target name="runjunitreport-common" depends="init-common">
+	
+	<mkdir dir="${report.dir}/html"/>	
+	<mkdir dir="${report.dir}/html/${genericra.raconfig.jmqimpl.friendlyname}-${appserver.friendlyname}-${genericra.raconfig.deliverytype}-${genericra.raconfig.supportsxa.friendlyname}"/>	
+
+	<junitreport todir="${report.dir}/xml/${genericra.raconfig.jmqimpl.friendlyname}-${appserver.friendlyname}-${genericra.raconfig.deliverytype}-${genericra.raconfig.supportsxa.friendlyname}">
+    	<fileset dir="${report.dir}/xml/${genericra.raconfig.jmqimpl.friendlyname}-${appserver.friendlyname}-${genericra.raconfig.deliverytype}-${genericra.raconfig.supportsxa.friendlyname}">
+                <include name="TEST-*.xml" />
+        </fileset>
+        <report format="frames" todir="${report.dir}/html/${genericra.raconfig.jmqimpl.friendlyname}-${appserver.friendlyname}-${genericra.raconfig.deliverytype}-${genericra.raconfig.supportsxa.friendlyname}" />
+    </junitreport>
+
 </target>
 
 <!-- prepare Pointbase servers -->

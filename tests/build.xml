@@ -29,6 +29,7 @@
 			<param name="test-target" value="all" />
 		</antcall>
 		<antcall target="unsetup"/>
+        <antcall target="runjunitreport-common"/>
 	</target>
 	
 	<!-- Run a single test. Specify test subdirectory using -Dtestdir=test-dir -->
@@ -90,8 +91,6 @@
 	</target>
 
 	<target name="run-all-tests" depends="init-common">
-		<record name="genericratests.output" action="start" />
-		<echo message="@@## Starting Generic RA tests ##@@" />
 		
 		<echo message=" @@## Running performance.queue ##@@" />
 		<ant dir="performance.queue" target="${test-target}" />
@@ -108,7 +107,6 @@
 		<echo message=" @@## Running stress.queue.requiresnew ##@@" />
 		<ant dir="stress.queue.requiresnew" target="${test-target}" />
 		<echo message=" @@## Finished stress.queue.requiresnew ##@@" />
-		
 		<!-- redelivery test doesn't work with noxa -->
 		  <if>
 		  	<equals arg1="${genericra.raconfig.supportsxa}" arg2="true" />
@@ -119,8 +117,6 @@
 		  	</then>
 		  </if>		
 		
-
-		
 		<echo message="@@## Running stress.topic.nondurable ##@@" />
 		<ant dir="stress.topic.nondurable" target="${test-target}" />
 		<echo message="@@## Finished stress.topic.nondurable ##@@" />
@@ -129,8 +125,6 @@
 		<ant dir="stress.topic.durable" target="${test-target}" />
 		<echo message="@@## Finished stress.topic.durable ##@@" />
 		
-		<record name="connector.output" action="stop" />
-	 
 	</target>
 
 	<target name="clean" depends="init-common">

@@ -283,6 +283,8 @@ public class PerformanceClient extends GenericClient {
 	        } finally {
 	        	tidyup();
 	        }
+	        // if we've got this far, the test has passed
+	        System.out.println("Receiver finished successfully: test PASS");
 	    }
 	    
 	    private Connection dataDestConnection;

@@ -31,18 +31,7 @@
     </target>
  
     <target name="compile" depends="clean">
-        <antcall target="compile-common">
-            <param name="src" value="../common/ejb"/>
-        </antcall> 
-        <antcall target="compile-common">
-            <param name="src" value="ejb"/>
-        </antcall> 
-        <antcall target="compile-common">
-            <param name="src" value="../common/client"/>
-        </antcall>    	
-        <antcall target="compile-common">
-            <param name="src" value="client"/>
-        </antcall>
+        <antcall  target="compile-common"/>
     </target>
 
     <target name="build" depends="compile">
@@ -126,10 +115,19 @@
     </target>
     
     <target name="run" depends="init-common">
+    	
+    	<record name="${basedir}/test.out" action="start" />
+    	<echo>(run) Started recording to ${basedir}/test.out</echo>
+    	
     	<parallel>
             <antcall target="runSender"/>
             <antcall target="runReceiver"/>
     	</parallel>
+    	
+    	<echo>(run) Stopping recording to ${basedir}/test.out</echo>
+    	<record name="${basedir}/test.out" action="stop" />
+    	
+        <antcall target="runjunit-common"/>    	
     </target>
 	
     <target name="runSender" depends="init-common">
