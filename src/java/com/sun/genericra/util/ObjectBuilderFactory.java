@@ -87,16 +87,24 @@ public class ObjectBuilderFactory {
         }
 
         public Object createObject() throws ResourceException {
+        	InitialContext ic = null;
             try {
                 Hashtable props = parseToProperties(this.jndiProps);
                 debug("Properties passed to InitialContext :: " + props);
 
-                InitialContext ic = new InitialContext(props);
+                ic = new InitialContext(props);
                 debug("Looking the JNDI name :" + this.jndiName);
 
                 return ic.lookup(this.jndiName);
             } catch (Exception e) {
                 throw ExceptionUtils.newInvalidPropertyException(e);
+            } finally {
+            	if (ic!=null)
+					try {
+						ic.close();
+					} catch (NamingException e) {
+						// ignore errors on closing the InitialContext
+					}
             }
         }
     }
