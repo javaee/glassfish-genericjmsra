@@ -22,7 +22,7 @@
           destdir="${build.classes.dir}"
           classpath="${ra.classpath}"
           debug="on"
-          source="1.4"
+          source="1.5"
           failonerror="true"/>
     </target>
 

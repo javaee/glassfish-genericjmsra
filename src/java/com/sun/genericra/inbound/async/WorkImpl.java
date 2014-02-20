@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2004-2005 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004-2014 Oracle and/or its affiliates. All rights reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,12 +16,9 @@
  */
 package com.sun.genericra.inbound.async;
 
-import com.sun.genericra.inbound.*;
 import com.sun.genericra.util.*;
 
 import java.util.logging.*;
-
-import javax.jms.Session;
 
 import javax.resource.spi.work.*;
 
@@ -35,17 +32,17 @@ import javax.resource.spi.work.*;
  */
 public class WorkImpl implements Work {
     private static Logger _logger;
-    
+
     static {
         _logger = LogUtils.getLogger();
     }
-    
+
     InboundJmsResource jmsResource;
-    
+
     public WorkImpl(InboundJmsResource jmsResource) {
         this.jmsResource = jmsResource;
     }
-    
+
     public void run() {
         try {
             _logger.log(Level.FINER, "Now running the message consumption");
@@ -60,18 +57,21 @@ public class WorkImpl implements Work {
                 if (helper.markedForDMD()) {
                     helper.sendMessageToDMD();
                 }
-                
-                
-                this.jmsResource.release();
             } catch (Exception e) {
-                _logger.log(Level.SEVERE, 
-                        "Exception while releasing the JMS resource" + e.getMessage());
+                _logger.log(Level.SEVERE,
+                        "Exception while releasing the JMS endpoint" + e.getMessage());
+            } finally {
+                try {
+                    this.jmsResource.release();
+                } catch (Exception e) {
+                    _logger.log(Level.SEVERE, 
+                            "Exception while releasing the JMS resource" + e.getMessage());
+                }
             }
-            
             _logger.log(Level.FINER, "Freed the resource now");
         }
     }
-    
+
     public void release() {
         // For now do nothing.
     }
