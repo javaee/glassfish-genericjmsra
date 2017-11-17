@@ -1,455 +1,39 @@
-/*
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
- *
- * Copyright (c) 2004-2017 Oracle and/or its affiliates. All rights reserved.
- *
- * The contents of this file are subject to the terms of either the GNU
- * General Public License Version 2 only ("GPL") or the Common Development
- * and Distribution License("CDDL") (collectively, the "License").  You
- * may not use this file except in compliance with the License.  You can
- * obtain a copy of the License at
- * https://oss.oracle.com/licenses/CDDL+GPL-1.1
- * or LICENSE.txt.  See the License for the specific
- * language governing permissions and limitations under the License.
- *
- * When distributing the software, include this License Header Notice in each
- * file and include the License file at LICENSE.txt.
- *
- * GPL Classpath Exception:
- * Oracle designates this particular file as subject to the "Classpath"
- * exception as provided by Oracle in the GPL Version 2 section of the License
- * file that accompanied this code.
- *
- * Modifications:
- * If applicable, add the following below the License Header, with the fields
- * enclosed by brackets [] replaced by your own identifying information:
- * "Portions Copyright [year] [name of copyright owner]"
- *
- * Contributor(s):
- * If you wish your version of this file to be governed by only the CDDL or
- * only the GPL Version 2, indicate your decision by adding "[Contributor]
- * elects to include this software in this distribution under the [CDDL or GPL
- * Version 2] license."  If you don't indicate a single choice of license, a
- * recipient has the option to distribute your version of this file under
- * either the CDDL, the GPL Version 2 or to extend the choice of license to
- * its licensees as provided above.  However, if you add GPL Version 2 code
- * and therefore, elected the GPL Version 2 license, then the option applies
- * only if the new code is made subject to such option by the copyright
- * holder.
- */
-
-package com.sun.genericra.inbound.sync;
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
-import javax.transaction.Synchronization;
-import javax.transaction.Transaction;
-import javax.transaction.TransactionManager;
-import java.lang.reflect.Method;
-import java.util.Properties;
-/**
- * Provides access to selected functionality of the J2EE transaction manager. Each
- * ManagedConnection will have one instance of this class and will reuse it.
- *
- * @author Frank Kieviet
- * @version $Revision: 1.2 $
- */
-public class TxMgr {
-    private TxMgrAdapter mTxMgrAdapter;
-    private static TransactionManager sUnitTestTxMgr;
-    /**
-     * Initializes this object to avoid a parameterized constructor
-     * 
-     * @param p Properties
-     */
-    public void init(Properties p) {
-        getTxMgrAdapter();
-    }
-    /**
-     * Closes a context
-     * 
-     * @param ctx context to close
-     */
-    public static void safeClose(Context ctx) {
-        if (ctx != null) {
-            try {
-                ctx.close();
-            } catch (NamingException ignore) {
-                // ignore
-            }
-        }
-    }
-    /**
-     * Finds out if the current thread is currently associated with a transaction
-     * 
-     * @return false if not in transaction or if not able to find out
-     */
-    public boolean isInTransaction() {
-        try {
-            TxMgrAdapter txm = getTxMgrAdapter();
-            if (txm != null) {
-                return txm.isInTransaction();
-            }
-        } catch (Exception ignore) {
-            // ignore
-        }
-        return false;
-    }
-   /**
-     * Registers a synchronization
-     * 
-     * @param sync synchronization
-     */
-    public void register(Synchronization sync) {
-        try {
-            TxMgrAdapter txm = getTxMgrAdapter();
-            if (txm != null) {
-                txm.register(sync);
-            }
-        } catch (Exception ignore) {
-            // ignoe
-        }
-    }
-    /**
-     * Finds the transaction manager
-     * 
-     * @return transaction manager
-     * @throws Exception when a transaction manager could not be located
-     */
-    public TransactionManager getTransactionManager() throws Exception {
-        TxMgrAdapter txm = getTxMgrAdapter();
-        if (txm != null) {
-            return txm.getTransactionManager();
-        } else {
-            throw new Exception("Could not find transaction manager adapter");
-        }
-    }
-    /**
-     * Returns a suitable transaction manager adapter
-     * 
-     * @return TxMgrAdapter
-     */
-    private TxMgrAdapter getTxMgrAdapter() {
-        if (mTxMgrAdapter != null) {
-            return mTxMgrAdapter;
-        }
-
-        // Try all known locators
-        if (mTxMgrAdapter == null) {
-            // Unit testing
-            mTxMgrAdapter = new UnitTest().init();
-        }
-        if (mTxMgrAdapter == null) {
-            mTxMgrAdapter = new SJSAS().init();
-        }
-        if (mTxMgrAdapter == null) {
-            // WebLogic
-            mTxMgrAdapter = new GlobalJNDI("javax.transaction.TransactionManager").init();
-        }
-        if (mTxMgrAdapter == null) {
-            // WAS6 (note, do this before looking up java:/ as that causes a warning in the WAS log)
-            mTxMgrAdapter = new WAS6a().init();
-        }
-        if (mTxMgrAdapter == null) {
-            // GlassFish v3
-            mTxMgrAdapter = new LocalJNDI("java:appserver/TransactionManager").init();
-        }
-        if (mTxMgrAdapter == null) {
-            // JBoss
-            mTxMgrAdapter = new LocalJNDI("java:/TransactionManager").init();
-        }
-        if (mTxMgrAdapter == null) {
-            // WL9 alternative
-            mTxMgrAdapter = new WL9().init();
-        }
-        if (mTxMgrAdapter == null) {
-            // Resin 3.x 
-            mTxMgrAdapter = new LocalJNDI("java:comp/TransactionManager").init();
-        }
-        if (mTxMgrAdapter == null) {
-            // Most others (Resin 2.x, Oracle OC4J (Orion), JOnAS (JOTM), BEA WebLogic)
-            mTxMgrAdapter = new LocalJNDI("java:comp/UserTransaction").init();
-        }
-        return mTxMgrAdapter;
-    }
-    /**
-     * Exposes the required functionality from a javax.transaction.TransactionManager
-     * or in the case of IBM, something similar
-     * 
-     * @author fkieviet
-     */
-    private abstract class TxMgrAdapter {
-        /**
-         * Initializes this adapter
-         * 
-         * @return this if the initialization was successful; null if not
-         */
-        public abstract TxMgrAdapter init();
-        /**
-         * @return the transaction manager
-         * @throws Exception on lookup failure
-         */
-        public abstract TransactionManager getTransactionManager() throws Exception;
-        /**
-         * @return transactionmanager
-         * @throws Exception propagated
-         */
-        public Transaction getTransaction() throws Exception {
-            return getTransactionManager().getTransaction();
-        }
-        /**
-         * Registers a synchronization object
-         * 
-         * @param sync Synchronization
-         * @throws Exception propagated
-         */
-        public final void register(Synchronization sync) throws Exception {
-            getTransaction().registerSynchronization(sync);
-        }
-        /**
-         * @return true if in a transaction
-         * @throws Exception propagated
-         */
-        public final boolean isInTransaction() throws Exception {
-            return getTransaction() != null;
-        }
-    }
-    /**
-     * For SJSAS 8, 8.1, 8.2, 9 and RTS
-     * 
-     * @author fkieviet
-     */
-    private class SJSAS extends TxMgrAdapter {
-        private TransactionManager mTransactionManager;
+/** * Copyright (c) 2004-2005 Oracle and/or its affiliates. All rights reserved. * *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License. *  You may obtain a copy of the License at * *      http://www.apache.org/licenses/LICENSE-2.0 * *  Unless required by applicable law or agreed to in writing, software *  distributed under the License is distributed on an "AS IS" BASIS, *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. *  See the License for the specific language governing permissions and *  limitations under the License. * */package com.sun.genericra.inbound.sync;import javax.naming.Context;import javax.naming.InitialContext;import javax.naming.NamingException;import javax.transaction.Synchronization;import javax.transaction.Transaction;import javax.transaction.TransactionManager;import java.lang.reflect.Method;import java.util.Properties;
+/** * Provides access to selected functionality of the J2EE transaction manager. Each * ManagedConnection will have one instance of this class and will reuse it. * * @author Frank Kieviet * @version $Revision: 1.2 $ */public class TxMgr {    private TxMgrAdapter mTxMgrAdapter;    private static TransactionManager sUnitTestTxMgr;
+    /**     * Initializes this object to avoid a parameterized constructor     *      * @param p Properties     */    public void init(Properties p) {        getTxMgrAdapter();    }
+    /**     * Closes a context     *      * @param ctx context to close     */    public static void safeClose(Context ctx) {        if (ctx != null) {            try {                ctx.close();            } catch (NamingException ignore) {                // ignore            }        }    }
+    /**     * Finds out if the current thread is currently associated with a transaction     *      * @return false if not in transaction or if not able to find out     */    public boolean isInTransaction() {        try {            TxMgrAdapter txm = getTxMgrAdapter();            if (txm != null) {                return txm.isInTransaction();            }        } catch (Exception ignore) {            // ignore        }
+        return false;    }
+   /**     * Registers a synchronization     *      * @param sync synchronization     */    public void register(Synchronization sync) {        try {            TxMgrAdapter txm = getTxMgrAdapter();            if (txm != null) {                txm.register(sync);            }        } catch (Exception ignore) {            // ignoe        }    }
+    /**     * Finds the transaction manager     *      * @return transaction manager     * @throws Exception when a transaction manager could not be located     */    public TransactionManager getTransactionManager() throws Exception {        TxMgrAdapter txm = getTxMgrAdapter();        if (txm != null) {            return txm.getTransactionManager();        } else {            throw new Exception("Could not find transaction manager adapter");        }    }
+    /**     * Returns a suitable transaction manager adapter     *      * @return TxMgrAdapter     */    private TxMgrAdapter getTxMgrAdapter() {        if (mTxMgrAdapter != null) {            return mTxMgrAdapter;        }        // Try all known locators        if (mTxMgrAdapter == null) {            // Unit testing            mTxMgrAdapter = new UnitTest().init();        }        if (mTxMgrAdapter == null) {            mTxMgrAdapter = new SJSAS().init();        }        if (mTxMgrAdapter == null) {            // WebLogic            mTxMgrAdapter = new GlobalJNDI("javax.transaction.TransactionManager").init();        }        if (mTxMgrAdapter == null) {            // WAS6 (note, do this before looking up java:/ as that causes a warning in the WAS log)            mTxMgrAdapter = new WAS6a().init();        }        if (mTxMgrAdapter == null) {            // GlassFish v3            mTxMgrAdapter = new LocalJNDI("java:appserver/TransactionManager").init();        }        if (mTxMgrAdapter == null) {            // JBoss            mTxMgrAdapter = new LocalJNDI("java:/TransactionManager").init();        }        if (mTxMgrAdapter == null) {            // WL9 alternative            mTxMgrAdapter = new WL9().init();        }        if (mTxMgrAdapter == null) {            // Resin 3.x             mTxMgrAdapter = new LocalJNDI("java:comp/TransactionManager").init();        }        if (mTxMgrAdapter == null) {            // Most others (Resin 2.x, Oracle OC4J (Orion), JOnAS (JOTM), BEA WebLogic)            mTxMgrAdapter = new LocalJNDI("java:comp/UserTransaction").init();        }        return mTxMgrAdapter;    }
+    /**     * Exposes the required functionality from a javax.transaction.TransactionManager     * or in the case of IBM, something similar     *      * @author fkieviet     */    private abstract class TxMgrAdapter {        /**         * Initializes this adapter         *          * @return this if the initialization was successful; null if not         */        public abstract TxMgrAdapter init();
+        /**         * @return the transaction manager         * @throws Exception on lookup failure         */        public abstract TransactionManager getTransactionManager() throws Exception;
+        /**         * @return transactionmanager         * @throws Exception propagated         */        public Transaction getTransaction() throws Exception {            return getTransactionManager().getTransaction();        }
+        /**         * Registers a synchronization object         *          * @param sync Synchronization         * @throws Exception propagated         */        public final void register(Synchronization sync) throws Exception {            getTransaction().registerSynchronization(sync);        }
+        /**         * @return true if in a transaction         * @throws Exception propagated         */        public final boolean isInTransaction() throws Exception {            return getTransaction() != null;        }    }
+    /**     * For SJSAS 8, 8.1, 8.2, 9 and RTS     *      * @author fkieviet     */    private class SJSAS extends TxMgrAdapter {        private TransactionManager mTransactionManager;
+        public TxMgrAdapter init() {            try {                Class c1 = Class.forName("com.sun.enterprise.Switch");                Method m1 = c1.getMethod("getSwitch", new Class[0]);                Object theswitch = m1.invoke(null, new Object[0]);                Method m2 = c1.getMethod("getTransactionManager", new Class[0]);                Object ret = m2.invoke(theswitch, new Object[0]);                mTransactionManager = (TransactionManager) ret;                return this;            } catch (Exception ignore) {                // ignore            }            return null;        }
+        /**         * @see com.stc.jmsjca.core.TxMgr.TxMgrAdapter#getTransactionManager()         */        public TransactionManager getTransactionManager() {            return mTransactionManager;        }    }
+    /**     * For WAS6, based on an article in OnJava at http://www.onjava.com/lpt/a/6055     *      * @author fkieviet     */    private class WAS6a extends TxMgrAdapter {        private TransactionManager mTransactionManager;
         public TxMgrAdapter init() {
-            try {
-                Class c1 = Class.forName("com.sun.enterprise.Switch");
-                Method m1 = c1.getMethod("getSwitch", new Class[0]);
-                Object theswitch = m1.invoke(null, new Object[0]);
-                Method m2 = c1.getMethod("getTransactionManager", new Class[0]);
-                Object ret = m2.invoke(theswitch, new Object[0]);
-                mTransactionManager = (TransactionManager) ret;
-                return this;
-            } catch (Exception ignore) {
-                // ignore
-            }
-            return null;
-        }
-        /**
-         * @see com.stc.jmsjca.core.TxMgr.TxMgrAdapter#getTransactionManager()
-         */
-        public TransactionManager getTransactionManager() {
-            return mTransactionManager;
-        }
-    }
-    /**
-     * For WAS6, based on an article in OnJava at http://www.onjava.com/lpt/a/6055
-     * 
-     * @author fkieviet
-     */
-    private class WAS6a extends TxMgrAdapter {
-        private TransactionManager mTransactionManager;
+            try {                Class c1 = Class.forName("com.ibm.ws.Transaction.TransactionManagerFactory");                Method m1 = c1.getMethod("getTransactionManager", new Class[0]);                Object ret = m1.invoke(null, new Object[0]);                mTransactionManager = (TransactionManager) ret;                return this;            } catch (Exception ex) {                // ignore            }            return null;        }
+        /**         * @see com.stc.jmsjca.core.TxMgr.TxMgrAdapter#getTransactionManager()         */        public TransactionManager getTransactionManager() {            return mTransactionManager;        }    }
+    /**     * For WL9, based on an article in OnJava at http://www.onjava.com/lpt/a/6055     *      * @author fkieviet     */    private class WL9 extends TxMgrAdapter {        private TransactionManager mTransactionManager;
         public TxMgrAdapter init() {
-            try {
-                Class c1 = Class.forName("com.ibm.ws.Transaction.TransactionManagerFactory");
-                Method m1 = c1.getMethod("getTransactionManager", new Class[0]);
-                Object ret = m1.invoke(null, new Object[0]);
-                mTransactionManager = (TransactionManager) ret;
-                return this;
-            } catch (Exception ex) {
-                // ignore
-            }
-            return null;
-        }
-        /**
-         * @see com.stc.jmsjca.core.TxMgr.TxMgrAdapter#getTransactionManager()
-         */
-        public TransactionManager getTransactionManager() {
-            return mTransactionManager;
-        }
-    }
-    /**
-     * For WL9, based on an article in OnJava at http://www.onjava.com/lpt/a/6055
-     * 
-     * @author fkieviet
-     */
-    private class WL9 extends TxMgrAdapter {
-        private TransactionManager mTransactionManager;
-        public TxMgrAdapter init() {
-            try {
-               Class c1 = Class.forName("weblogic.transaction.TransactionHelper");
-                Method m1 = c1.getMethod("getTransactionManager", new Class[0]);
-                Object ret = m1.invoke(null, new Object[0]);
-                mTransactionManager = (TransactionManager) ret;
-                return this;
-            } catch (Exception ex) {
-                // ignore
-            }
-            return null;
-        }
-       /**
-         * @see com.stc.jmsjca.core.TxMgr.TxMgrAdapter#getTransactionManager()
-         */
-        public TransactionManager getTransactionManager() {
-            return mTransactionManager;
-        }
-    }
-    /**
-     * For WL9, based on an article in OnJava at http://www.onjava.com/lpt/a/6055
-     * 
-     * @author fkieviet
-     */
-    private class UnitTest extends TxMgrAdapter {
-        /**
-         * @see com.stc.jmsjca.core.TxMgr.TxMgrAdapter#init()
-         */
-        public TxMgrAdapter init() {
-            return sUnitTestTxMgr != null ? this : null;
-        }
-        /**
-         * @see com.stc.jmsjca.core.TxMgr.TxMgrAdapter#getTransactionManager()
-         */
-        public TransactionManager getTransactionManager() {
-            return sUnitTestTxMgr;
-        }
-    }
-    /**
-     * see http://publib.boulder.ibm.com/infocenter/wasinfo/v5r1/index.jsp?topic=/com
-     * .ibm.wasee.doc/info/ee/javadoc/ee/com/ibm/websphere/jtaextensions/ExtendedJTATransaction.html
-     * 
-     * NOTE: UNDER DEVELOPMENT; DO NOT USE
-     * ACCORDING TO IBM DOCUMENTATION, THE SYNCHRONIZATION IS GLOBAL AND NEEDS TO
-     * BE UNREGISTERED; THE SYNCHRONIZATION NEEDS TO CHECK THE XID. USE A STATIC OBJECT
-     * SO THAT ONLY ONE SYNCHRONIZATION CAN BE USED? TBD!
-     * 
-     * Note: see http://www.onjava.com/lpt/a/6055 for a better approach
-     * 
-     * @author fkieviet
-     */
-//    private class WAS6 extends TxMgrAdapter {
-//        private Method mGetGlobalIdMethod;
-//        private Method mRegisterMethod;
-//        private Class mSynchronizationCallbackClass;
-//        
-//        private Object getTxMgr() throws Exception {
-//            Context ctx = new InitialContext();
-//            Object txmgr = ctx.lookup("java:comp/websphere/ExtendedJTATransaction");
-//            return txmgr;
-//        }
-//        
-//        public TxMgrAdapter init() {
-//            try {
-//                Object txmgr = getTxMgr();
-//                mGetGlobalIdMethod = txmgr.getClass().getMethod("getGlobalId", new Class[0]);
-//                mSynchronizationCallbackClass = Class.forName(
-//                    "com.ibm.websphere.jtaextensions.SynchronizationCallback", false, 
-//                    txmgr.getClass().getClassLoader());
-//                mRegisterMethod = txmgr.getClass().getMethod("registerSynchronizationCallback",
-//                    new Class[] {mSynchronizationCallbackClass});
-//            } catch (Exception ignore) {
-//                // ignore
-//            }
-//            
-//            return this;
-//        }
-//
-//        public boolean isInTransaction() throws Exception {
-//            Object txmgr = getTxMgr();
-//            Object id = mGetGlobalIdMethod.invoke(txmgr, new Object[] {});
-//            return id != null;
-//        }
-//        
-//        public void register(final Synchronization sync) throws Exception {
-//            final InvocationHandler ih = new InvocationHandler() {
-//                public Object invoke(Object proxy, Method method, Object[] args)
-//                    throws Throwable {
-//                    if ("afterCompletion".equals(method.getName())) {
-//                        int status = args[2].equals(Boolean.TRUE) ? Status.STATUS_COMMITTED
-//                            : Status.STATUS_UNKNOWN;
-//                        sync.afterCompletion(status);
-//                    } else if ("beforeCompletion".equals(method.getName())) {
-//                        sync.beforeCompletion();
-//                    } else if ("toString".equals(method.getName())) {
-//                        return sync.toString();
-//                    }
-//                    return null;
-//                }
-//            };
-//
-//            final Object synchronizationCallback = Proxy.newProxyInstance(
-//                getClass().getClassLoader(), new Class[] {mSynchronizationCallbackClass}, ih);
-//
-//            Object txmgr = getTxMgr();
-//            mRegisterMethod.invoke(txmgr, new Object[] {synchronizationCallback});
-//        }
-//    }
-    /**
-     * Looks up once in global JNDI and uses this cached object
-     * 
-     * @author fkieviet
-     */
-    private class GlobalJNDI extends TxMgrAdapter {
-        private TransactionManager mTransactionManager;
-        private String mName;
-        public GlobalJNDI(String name) {
-            mName = name;
-        }
-        public TxMgrAdapter init() {
-            Context ctx = null;
-            try {
-                ctx = new InitialContext();
-                mTransactionManager = (TransactionManager) ctx.lookup(mName);
-                return this;
-            } catch (Exception ignore) {
-                // ignore
-            } finally {
-                safeClose(ctx);
-            }
-            return null;
-        }
-        /**
-         * @see com.stc.jmsjca.core.TxMgr.TxMgrAdapter#getTransactionManager()
-         */
-        public TransactionManager getTransactionManager() {
-            return mTransactionManager;
-        }
-    }
-    /**
-     * Looks up every time in JNDI (no caching)
-     * 
-     * @author fkieviet
-     */
-    private class LocalJNDI extends TxMgrAdapter {
-        private String mName;
-
-        public LocalJNDI(String name) {
-            mName = name;
-        }
-        public TxMgrAdapter init() {
-            Context ctx = null;
-            try {
-                ctx = new InitialContext();
-                TransactionManager mgr = (TransactionManager) ctx.lookup(mName);
-                return mgr == null ? null : this;
-            } catch (Exception ignore) {
-                // ignore
-            } finally {
-                safeClose(ctx);
-            }
-            return null;
-        }
-        public TransactionManager getTransactionManager() throws Exception {
-            Context ctx = null;
-            try {
-                ctx = new InitialContext();
-                return (TransactionManager) ctx.lookup(mName);
-            } catch (Exception e) {
-                throw e;
-            } finally {
-                safeClose(ctx);
-            }
-        }
-    }
+            try {               Class c1 = Class.forName("weblogic.transaction.TransactionHelper");                Method m1 = c1.getMethod("getTransactionManager", new Class[0]);                Object ret = m1.invoke(null, new Object[0]);                mTransactionManager = (TransactionManager) ret;                return this;            } catch (Exception ex) {                // ignore            }            return null;        }
+       /**         * @see com.stc.jmsjca.core.TxMgr.TxMgrAdapter#getTransactionManager()         */        public TransactionManager getTransactionManager() {            return mTransactionManager;        }    }
+    /**     * For WL9, based on an article in OnJava at http://www.onjava.com/lpt/a/6055     *      * @author fkieviet     */    private class UnitTest extends TxMgrAdapter {        /**         * @see com.stc.jmsjca.core.TxMgr.TxMgrAdapter#init()         */        public TxMgrAdapter init() {            return sUnitTestTxMgr != null ? this : null;        }
+        /**         * @see com.stc.jmsjca.core.TxMgr.TxMgrAdapter#getTransactionManager()         */        public TransactionManager getTransactionManager() {            return sUnitTestTxMgr;        }    }
+    /**     * see http://publib.boulder.ibm.com/infocenter/wasinfo/v5r1/index.jsp?topic=/com     * .ibm.wasee.doc/info/ee/javadoc/ee/com/ibm/websphere/jtaextensions/ExtendedJTATransaction.html     *      * NOTE: UNDER DEVELOPMENT; DO NOT USE     * ACCORDING TO IBM DOCUMENTATION, THE SYNCHRONIZATION IS GLOBAL AND NEEDS TO     * BE UNREGISTERED; THE SYNCHRONIZATION NEEDS TO CHECK THE XID. USE A STATIC OBJECT     * SO THAT ONLY ONE SYNCHRONIZATION CAN BE USED? TBD!     *      * Note: see http://www.onjava.com/lpt/a/6055 for a better approach     *      * @author fkieviet     *///    private class WAS6 extends TxMgrAdapter {//        private Method mGetGlobalIdMethod;//        private Method mRegisterMethod;//        private Class mSynchronizationCallbackClass;//        //        private Object getTxMgr() throws Exception {//            Context ctx = new InitialContext();//            Object txmgr = ctx.lookup("java:comp/websphere/ExtendedJTATransaction");//            return txmgr;//        }//        //        public TxMgrAdapter init() {//            try {//                Object txmgr = getTxMgr();//                mGetGlobalIdMethod = txmgr.getClass().getMethod("getGlobalId", new Class[0]);//                mSynchronizationCallbackClass = Class.forName(//                    "com.ibm.websphere.jtaextensions.SynchronizationCallback", false, //                    txmgr.getClass().getClassLoader());//                mRegisterMethod = txmgr.getClass().getMethod("registerSynchronizationCallback",//                    new Class[] {mSynchronizationCallbackClass});//            } catch (Exception ignore) {//                // ignore//            }//            //            return this;//        }////        public boolean isInTransaction() throws Exception {//            Object txmgr = getTxMgr();//            Object id = mGetGlobalIdMethod.invoke(txmgr, new Object[] {});//            return id != null;//        }//        //        public void register(final Synchronization sync) throws Exception {//            final InvocationHandler ih = new InvocationHandler() {//                public Object invoke(Object proxy, Method method, Object[] args)//                    throws Throwable {//                    if ("afterCompletion".equals(method.getName())) {//                        int status = args[2].equals(Boolean.TRUE) ? Status.STATUS_COMMITTED//                            : Status.STATUS_UNKNOWN;//                        sync.afterCompletion(status);//                    } else if ("beforeCompletion".equals(method.getName())) {//                        sync.beforeCompletion();//                    } else if ("toString".equals(method.getName())) {//                        return sync.toString();//                    }//                    return null;//                }//            };////            final Object synchronizationCallback = Proxy.newProxyInstance(//                getClass().getClassLoader(), new Class[] {mSynchronizationCallbackClass}, ih);////            Object txmgr = getTxMgr();//            mRegisterMethod.invoke(txmgr, new Object[] {synchronizationCallback});//        }//    }
+    /**     * Looks up once in global JNDI and uses this cached object     *      * @author fkieviet     */    private class GlobalJNDI extends TxMgrAdapter {        private TransactionManager mTransactionManager;        private String mName;
+        public GlobalJNDI(String name) {            mName = name;        }
+        public TxMgrAdapter init() {            Context ctx = null;            try {                ctx = new InitialContext();                mTransactionManager = (TransactionManager) ctx.lookup(mName);                return this;            } catch (Exception ignore) {                // ignore            } finally {                safeClose(ctx);            }            return null;        }
+        /**         * @see com.stc.jmsjca.core.TxMgr.TxMgrAdapter#getTransactionManager()         */        public TransactionManager getTransactionManager() {            return mTransactionManager;        }    }
+    /**     * Looks up every time in JNDI (no caching)     *      * @author fkieviet     */    private class LocalJNDI extends TxMgrAdapter {        private String mName;        public LocalJNDI(String name) {            mName = name;        }
+        public TxMgrAdapter init() {            Context ctx = null;            try {                ctx = new InitialContext();                TransactionManager mgr = (TransactionManager) ctx.lookup(mName);                return mgr == null ? null : this;            } catch (Exception ignore) {                // ignore            } finally {                safeClose(ctx);            }            return null;        }
+        public TransactionManager getTransactionManager() throws Exception {            Context ctx = null;            try {                ctx = new InitialContext();                return (TransactionManager) ctx.lookup(mName);            } catch (Exception e) {                throw e;            } finally {                safeClose(ctx);            }        }    }
     /**
      * For testing only! Sets an arbitrary global transaction manager
      * 
@@ -462,8 +46,6 @@ public class TxMgr {
      * For testing only! Gets the global transaction manager if set
      * 
      * @return TransactionManager
-     */
-    public static TransactionManager getUnitTestTxMgr() {
+     */    public static TransactionManager getUnitTestTxMgr() {
         return sUnitTestTxMgr;
-    }
-}
+    }}
