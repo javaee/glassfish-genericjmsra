@@ -1,5 +1,5 @@
 /**
- * Copyright 2004-2010 Sun Microsystems, Inc.
+ * Copyright (c) 2004-2017 Oracle and/or its affiliates. All rights reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -14,6 +14,7 @@
  *  limitations under the License.
  *
  */
+
 package com.sun.genericra.outbound;
 
 import com.sun.genericra.util.Constants;
