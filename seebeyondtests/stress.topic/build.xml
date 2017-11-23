@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
-<!DOCTYPE project [
+<!DOCTYPE project [ <!ENTITY commonSetup SYSTEM "file:../../config/properties.xml"> <!ENTITY commonBuild SYSTEM "file:../../config/common.xml"> <!ENTITY testproperties SYSTEM "file:./build.properties"> ]>
 <!--
 
     Copyright (c) 2004-2017 Oracle and/or its affiliates. All rights reserved.
@@ -32,11 +32,6 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 -->
-
-<!ENTITY commonSetup SYSTEM "file:../../config/properties.xml">
-<!ENTITY commonBuild SYSTEM "file:../../config/common.xml">
-<!ENTITY testproperties SYSTEM "file:./build.properties">
-]>
 
 <project name="SimpleTopicStressApp" default="usage" basedir=".">
 
